@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "Lucca Cell — Catálogo Online"
+description = "Catálogo online da Lucca Cell para explorar assistência técnica, acessórios e produtos eletrônicos com busca, categorias, detalhes e carrinho de compras."
+version = "1.0.0"
+id = "artifacts/lucca-cell-catalogo"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 24120
+
+[services.development]
+run = "pnpm --filter @workspace/lucca-cell-catalogo run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/lucca-cell-catalogo", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/lucca-cell-catalogo/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "24120"
+BASE_PATH = "/"
