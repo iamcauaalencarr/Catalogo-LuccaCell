@@ -1,28 +1,15 @@
-import { type LucideIcon, ArrowRight, BatteryCharging, Cable, Check, ChevronDown, CircleCheck, Clock3, Headphones, Heart, Laptop, MapPin, Menu, MessageCircle, Minus, PackageCheck, Plus, RotateCcw, Search, ShieldCheck, ShoppingBag, SlidersHorizontal, Smartphone, Sparkles, Star, Tablet, Trash2, Truck, Wrench, X, Zap } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { type LucideIcon, ArrowRight, BatteryCharging, Cable, Check, ChevronDown, CircleCheck, Clock3, Headphones, Heart, Laptop, MapPin, Menu, MessageCircle, Minus, PackageCheck, Plus, RotateCcw, Search, ShieldCheck, ShoppingBag, SlidersHorizontal, Smartphone, Sparkles, Star, Tablet, Trash2, Truck, Wrench, X, Zap, Lock } from 'lucide-react';
+import { useMemo, useState, useEffect } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ErrorBoundary } from '@/components/error-boundary';
 import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import logoPath from '@assets/LOGO_1_1786564407567.png';
+import { AdminLoginModal } from '@/components/AdminLoginModal';
+import { AdminPanel, type Product, type Category } from '@/components/AdminPanel';
 
 const queryClient = new QueryClient();
 
-type Category = 'Todos' | 'Capinhas' | 'Cabos e carregadores' | 'Áudio' | 'Proteção' | 'Assistência';
-type Product = {
-  id: number;
-  name: string;
-  category: Exclude<Category, 'Todos'>;
-  price: number;
-  oldPrice?: number;
-  installment: string;
-  rating: number;
-  reviews: number;
-  tag?: string;
-  description: string;
-  visual: 'phone' | 'cable' | 'audio' | 'shield' | 'battery' | 'laptop' | 'tablet' | 'repair';
-  tone: string;
-};
 type CartLine = { product: Product; quantity: number };
 
 const categories: { name: Category; count?: string; icon: LucideIcon }[] = [
@@ -34,7 +21,7 @@ const categories: { name: Category; count?: string; icon: LucideIcon }[] = [
   { name: 'Assistência', count: '06', icon: Wrench },
 ];
 
-const products: Product[] = [
+const INITIAL_PRODUCTS: Product[] = [
   { id: 1, name: 'Capa Armor MagSafe', category: 'Capinhas', price: 89.9, oldPrice: 109.9, installment: '3x de R$ 29,97', rating: 4.9, reviews: 38, tag: 'Mais pedido', description: 'Proteção firme, toque macio e alinhamento perfeito para carregamento sem fio.', visual: 'phone', tone: 'linear-gradient(135deg,#29251f,#bd7824)' },
   { id: 2, name: 'Cabo Nylon Turbo 2m', category: 'Cabos e carregadores', price: 54.9, installment: '2x de R$ 27,45', rating: 4.8, reviews: 27, tag: 'Novo', description: 'Resistente para a rotina, com carga rápida e acabamento trançado premium.', visual: 'cable', tone: 'linear-gradient(145deg,#e9d6a5,#fbf5df)' },
   { id: 3, name: 'Fone Pulse TWS', category: 'Áudio', price: 149.9, oldPrice: 179.9, installment: '4x de R$ 37,48', rating: 4.7, reviews: 51, tag: 'Oferta', description: 'Som encorpado, estojo compacto e bateria para acompanhar o seu dia.', visual: 'audio', tone: 'linear-gradient(140deg,#20201e,#5d5b55)' },
@@ -48,11 +35,30 @@ const products: Product[] = [
 const formatPrice = (value: number) => value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
 function ProductVisual({ product }: { product: Product }) {
+  if (product.image) {
+    return (
+      <div className="product-visual relative flex h-[206px] items-center justify-center overflow-hidden rounded-[14px] sm:h-[220px] bg-[#171411]">
+        <img 
+          src={product.image} 
+          alt={product.name} 
+          className="h-full w-full object-cover transition-transform duration-300 hover:scale-105" 
+        />
+        <span className="shine" />
+        <div className="absolute left-4 top-4 rounded-full bg-[#f8f1de]/90 px-2.5 py-1 text-[9px] font-bold uppercase tracking-[.12em] text-[#3a2b1c] z-10 backdrop-blur-md shadow-xs">
+          {product.category}
+        </div>
+        <span className="absolute bottom-3 right-4 font-mono text-[10px] tracking-[.14em] text-white/90 bg-black/60 px-2 py-0.5 rounded-full z-10 backdrop-blur-xs">
+          LC / {String(product.id).padStart(2, '0')}
+        </span>
+      </div>
+    );
+  }
+
   const icons: Record<Product['visual'], LucideIcon> = {
     phone: Smartphone, cable: Cable, audio: Headphones, shield: ShieldCheck,
     battery: BatteryCharging, laptop: Laptop, tablet: Tablet, repair: Wrench,
   };
-  const Icon = icons[product.visual];
+  const Icon = icons[product.visual] || Smartphone;
   return (
     <div className="product-visual relative flex h-[206px] items-center justify-center overflow-hidden rounded-[14px] sm:h-[220px]" style={{ background: product.tone }}>
       <span className="shine" />
@@ -98,7 +104,19 @@ function ProductCard({ product, favorite, onFavorite, onAdd }: { product: Produc
   );
 }
 
-function Header({ cartCount, favoriteCount, onCart }: { cartCount: number; favoriteCount: number; onCart: () => void }) {
+function Header({ 
+  cartCount, 
+  favoriteCount, 
+  onCart,
+  onOpenAdmin,
+  isAdminLoggedIn
+}: { 
+  cartCount: number; 
+  favoriteCount: number; 
+  onCart: () => void;
+  onOpenAdmin: () => void;
+  isAdminLoggedIn: boolean;
+}) {
   const [menuOpen, setMenuOpen] = useState(false);
   const jump = (id: string) => { setMenuOpen(false); document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' }); };
   return (
@@ -114,6 +132,19 @@ function Header({ cartCount, favoriteCount, onCart }: { cartCount: number; favor
           <button type="button" onClick={() => jump('rodape')} data-testid="button-nav-contato" className="transition-colors hover:text-[#ffd35a]">A loja</button>
         </nav>
         <div className="flex items-center gap-2">
+          <button 
+            type="button" 
+            onClick={onOpenAdmin} 
+            data-testid="button-header-admin" 
+            className={`flex h-10 items-center gap-1.5 rounded-full border px-3 text-[11px] font-bold transition-all ${
+              isAdminLoggedIn 
+                ? 'border-[#f4b52e] bg-[#f4b52e] text-[#211b17]' 
+                : 'border-[#45382c] text-[#f4b52e] hover:bg-[#2b241e]'
+            }`}
+          >
+            <Lock size={15} />
+            <span className="hidden sm:inline">{isAdminLoggedIn ? 'Painel Admin' : 'Admin'}</span>
+          </button>
           <button type="button" onClick={() => jump('catalogo')} data-testid="button-header-search" aria-label="Buscar produtos" className="icon-button hidden h-10 w-10 items-center justify-center rounded-full border border-[#45382c] text-[#dbcdb9] hover:bg-[#2b241e] sm:flex"><Search size={17} /></button>
           <button type="button" onClick={onCart} data-testid="button-open-cart-header" className="icon-button relative flex h-10 items-center gap-2 rounded-full border border-[#45382c] px-3 text-[11px] font-bold text-[#fff4dd] hover:bg-[#2b241e]">
             <ShoppingBag size={17} /><span className="hidden sm:inline">Sacola</span>{cartCount > 0 && <b className="flex h-5 min-w-5 items-center justify-center rounded-full bg-[#f4b52e] px-1 text-[10px] text-[#211b17]">{cartCount}</b>}
@@ -121,7 +152,7 @@ function Header({ cartCount, favoriteCount, onCart }: { cartCount: number; favor
           <button type="button" onClick={() => setMenuOpen(!menuOpen)} data-testid="button-mobile-menu" aria-label="Abrir menu" className="icon-button flex h-10 w-10 items-center justify-center rounded-full border border-[#45382c] text-[#dbcdb9] md:hidden">{menuOpen ? <X size={18} /> : <Menu size={18} />}</button>
         </div>
       </div>
-      {menuOpen && <div className="animate-slide border-t border-[#33291f] bg-[#211b17] px-5 py-4 md:hidden"><div className="container-lucca flex flex-col gap-4 text-[11px] font-bold uppercase tracking-[.14em] text-[#e9d9be]"><button type="button" onClick={() => jump('catalogo')} data-testid="button-mobile-catalogo" className="text-left">Catálogo</button><button type="button" onClick={() => jump('servicos')} data-testid="button-mobile-servicos" className="text-left">Serviços</button><button type="button" onClick={() => jump('rodape')} data-testid="button-mobile-contato" className="text-left">A loja</button><span className="text-[#e2a733]">♡ {favoriteCount} favoritos salvos</span></div></div>}
+      {menuOpen && <div className="animate-slide border-t border-[#33291f] bg-[#211b17] px-5 py-4 md:hidden"><div className="container-lucca flex flex-col gap-4 text-[11px] font-bold uppercase tracking-[.14em] text-[#e9d9be]"><button type="button" onClick={() => jump('catalogo')} data-testid="button-mobile-catalogo" className="text-left">Catálogo</button><button type="button" onClick={() => jump('servicos')} data-testid="button-mobile-servicos" className="text-left">Serviços</button><button type="button" onClick={() => jump('rodape')} data-testid="button-mobile-contato" className="text-left">A loja</button><button type="button" onClick={onOpenAdmin} className="text-left text-[#f4b52e] font-extrabold flex items-center gap-2"><Lock size={14} /> Painel Administrativo</button><span className="text-[#e2a733]">♡ {favoriteCount} favoritos salvos</span></div></div>}
     </header>
   );
 }
@@ -143,7 +174,49 @@ function CartDrawer({ open, lines, onClose, onQuantity, onRemove }: { open: bool
   );
 }
 
-function App() {
+import { 
+  fetchProductsFromSupabase, 
+  syncProductsToSupabase, 
+  deleteProductFromSupabase 
+} from '@/lib/supabase';
+
+export function App() {
+  const [productList, setProductList] = useState<Product[]>(() => {
+    try {
+      const saved = localStorage.getItem('lucca_cell_products');
+      return saved ? JSON.parse(saved) : INITIAL_PRODUCTS;
+    } catch {
+      return INITIAL_PRODUCTS;
+    }
+  });
+
+  // Tenta carregar os dados reais do Supabase na inicialização
+  useEffect(() => {
+    async function loadSupabaseData() {
+      const dbProducts = await fetchProductsFromSupabase();
+      if (dbProducts && dbProducts.length > 0) {
+        setProductList(dbProducts);
+      } else {
+        // Primeira sincronização com o banco
+        syncProductsToSupabase(productList);
+      }
+    }
+    loadSupabaseData();
+  }, []);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('lucca_cell_products', JSON.stringify(productList));
+    } catch (e) {
+      console.error(e);
+    }
+  }, [productList]);
+
+  // Admin state
+  const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false);
+  const [isAdminLoginModalOpen, setIsAdminLoginModalOpen] = useState(false);
+  const [showAdminPanel, setShowAdminPanel] = useState(false);
+
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState<Category>('Todos');
   const [favorites, setFavorites] = useState<number[]>([]);
@@ -155,7 +228,7 @@ function App() {
 
   const filteredProducts = useMemo(() => {
     const normalized = query.trim().toLocaleLowerCase('pt-BR');
-    const filtered = products.filter((product) => {
+    const filtered = productList.filter((product) => {
       const matchesCategory = category === 'Todos' || product.category === category;
       const matchesQuery = !normalized || `${product.name} ${product.category} ${product.description}`.toLocaleLowerCase('pt-BR').includes(normalized);
       return matchesCategory && matchesQuery;
@@ -163,15 +236,17 @@ function App() {
     if (sort === 'Menor preço') return [...filtered].sort((a, b) => a.price - b.price);
     if (sort === 'Maior avaliação') return [...filtered].sort((a, b) => b.rating - a.rating);
     return filtered;
-  }, [category, query, sort]);
+  }, [category, query, sort, productList]);
 
   const cartCount = lines.reduce((sum, line) => sum + line.quantity, 0);
   const showToast = (message: string) => { setToast(message); window.setTimeout(() => setToast(''), 2400); };
+  
   const toggleFavorite = (id: number) => {
-    const product = products.find((item) => item.id === id);
+    const product = productList.find((item) => item.id === id);
     setFavorites((current) => current.includes(id) ? current.filter((item) => item !== id) : [...current, id]);
     if (product) showToast(favorites.includes(id) ? 'Removido dos favoritos' : `${product.name} salvo nos favoritos`);
   };
+
   const addToCart = (product: Product) => {
     setLines((current) => {
       const found = current.find((line) => line.product.id === product.id);
@@ -179,70 +254,138 @@ function App() {
     });
     showToast(`${product.name} foi para a sacola`);
   };
+
   const changeQuantity = (id: number, delta: number) => setLines((current) => current.flatMap((line) => line.product.id === id ? (line.quantity + delta > 0 ? [{ ...line, quantity: line.quantity + delta }] : []) : [line]));
   const removeLine = (id: number) => setLines((current) => current.filter((line) => line.product.id !== id));
   const jumpToCatalog = () => document.getElementById('catalogo')?.scrollIntoView({ behavior: 'smooth' });
 
+  // CRUD handlers para o AdminPanel com sincronização Supabase
+  const handleAddProduct = (newProd: Omit<Product, 'id' | 'rating' | 'reviews'>) => {
+    const nextId = productList.length > 0 ? Math.max(...productList.map(p => p.id)) + 1 : 1;
+    const fullProduct: Product = {
+      ...newProd,
+      id: nextId,
+      rating: 5.0,
+      reviews: 1
+    };
+    const updated = [fullProduct, ...productList];
+    setProductList(updated);
+    syncProductsToSupabase(updated);
+    showToast(`Produto "${fullProduct.name}" cadastrado!`);
+  };
+
+  const handleEditProduct = (updatedProd: Product) => {
+    const updated = productList.map(p => p.id === updatedProd.id ? updatedProd : p);
+    setProductList(updated);
+    syncProductsToSupabase(updated);
+    showToast(`Produto "${updatedProd.name}" atualizado!`);
+  };
+
+  const handleDeleteProduct = (id: number) => {
+    const updated = productList.filter(p => p.id !== id);
+    setProductList(updated);
+    deleteProductFromSupabase(id);
+    showToast('Produto removido do catálogo');
+  };
+
+  const handleOpenAdmin = () => {
+    if (isAdminLoggedIn) {
+      setShowAdminPanel(true);
+    } else {
+      setIsAdminLoginModalOpen(true);
+    }
+  };
+
   return (
     <div id="topo" className="catalog-shell bg-[#f4efe5] text-[#241c16]">
-      <Header cartCount={cartCount} favoriteCount={favorites.length} onCart={() => setCartOpen(true)} />
-      <main>
-        <section className="hero-grid texture relative overflow-hidden text-[#fff8e9]">
-          <div className="hero-orb" />
-          <div className="container-lucca relative grid min-h-[510px] items-center gap-10 py-14 md:grid-cols-[1.08fr_.92fr] md:py-20">
-            <div className="max-w-[650px]">
-              <div className="animate-rise inline-flex items-center gap-2 rounded-full border border-[#67502d] bg-[#2b231c] px-3 py-1.5 text-[10px] font-bold uppercase tracking-[.14em] text-[#f6c64c]"><span className="h-1.5 w-1.5 animate-[pulse-dot_2s_ease-in-out_infinite] rounded-full bg-[#e99c28]" /> Catálogo da loja · Campo Grande, MS</div>
-              <h1 className="display animate-rise delay-1 mt-7 max-w-[700px] text-[clamp(3.45rem,7vw,6.7rem)] font-semibold leading-[.9]">Seu tech, <span className="gold-text">bem cuidado.</span></h1>
-              <p className="animate-rise delay-2 mt-7 max-w-[500px] text-[15px] leading-relaxed text-[#cfc0aa]">Acessórios que acompanham seu ritmo e assistência técnica de verdade, feita perto de você. Escolha online, retire na Lucca Cell.</p>
-              <div className="animate-rise delay-3 mt-8 flex flex-wrap items-center gap-3"><button type="button" onClick={jumpToCatalog} data-testid="button-hero-catalog" className="group flex items-center gap-3 rounded-full bg-[#f4b52e] px-5 py-3 text-xs font-extrabold text-[#2a1d13] transition-colors hover:bg-[#ffce57]">Explorar catálogo <ArrowRight size={16} className="transition-transform group-hover:translate-x-1" /></button><button type="button" onClick={() => document.getElementById('servicos')?.scrollIntoView({ behavior: 'smooth' })} data-testid="button-hero-services" className="rounded-full border border-[#69543c] px-5 py-3 text-xs font-bold text-[#e8d9bf] hover:border-[#eab23d] hover:text-[#ffd45e]">Conheça a assistência</button></div>
-              <div className="mt-12 flex flex-wrap gap-x-7 gap-y-3 text-[10px] font-bold uppercase tracking-[.12em] text-[#a9977c]"><span className="flex items-center gap-2"><ShieldCheck size={14} className="text-[#eeb23c]" /> Garantia Lucca</span><span className="flex items-center gap-2"><Clock3 size={14} className="text-[#eeb23c]" /> Atendimento humano</span></div>
-            </div>
-            <div className="relative hidden min-h-[330px] items-center justify-center md:flex">
-              <div className="absolute right-[7%] top-[12%] h-[255px] w-[255px] rounded-full bg-[#ed9827] opacity-20 blur-[55px]" />
-              <div className="relative h-[280px] w-[280px] rotate-6 rounded-[38px] border border-[#6e5935] bg-[#29211a] p-5 shadow-[20px_25px_0_rgba(0,0,0,.22)]">
-                <div className="flex h-full flex-col justify-between rounded-[25px] border border-[#735b34] bg-[#1d1916] p-5">
-                  <div className="flex items-center justify-between"><span className="eyebrow text-[#d7ad55]">Lucca / 24</span><Sparkles size={19} className="text-[#f3bd38]" /></div>
-                  <div className="flex items-center justify-center"><div className="flex h-[130px] w-[76px] rotate-[-10deg] items-center justify-center rounded-[17px] border-[4px] border-[#c8c5bc] bg-[#10100f] shadow-[9px_12px_0_rgba(237,153,32,.28)]"><Smartphone size={30} className="text-[#efb735]" /><span className="absolute bottom-2 h-1 w-4 rounded-full bg-[#a8a59c]" /></div></div>
-                  <div><p className="display text-[23px] text-[#fff4dc]">Pronto para<br /><span className="gold-text">voltar a funcionar.</span></p></div>
+      <Header 
+        cartCount={cartCount} 
+        favoriteCount={favorites.length} 
+        onCart={() => setCartOpen(true)}
+        onOpenAdmin={handleOpenAdmin}
+        isAdminLoggedIn={isAdminLoggedIn}
+      />
+
+      {/* Render Admin Panel or Public Catalog */}
+      {showAdminPanel && isAdminLoggedIn ? (
+        <AdminPanel
+          products={productList}
+          onAddProduct={handleAddProduct}
+          onEditProduct={handleEditProduct}
+          onDeleteProduct={handleDeleteProduct}
+          onCloseAdmin={() => setShowAdminPanel(false)}
+        />
+      ) : (
+        <main>
+          <section className="hero-grid texture relative overflow-hidden text-[#fff8e9]">
+            <div className="hero-orb" />
+            <div className="container-lucca relative grid min-h-[510px] items-center gap-10 py-14 md:grid-cols-[1.08fr_.92fr] md:py-20">
+              <div className="max-w-[650px]">
+                <div className="animate-rise inline-flex items-center gap-2 rounded-full border border-[#67502d] bg-[#2b231c] px-3 py-1.5 text-[10px] font-bold uppercase tracking-[.14em] text-[#f6c64c]"><span className="h-1.5 w-1.5 animate-[pulse-dot_2s_ease-in-out_infinite] rounded-full bg-[#e99c28]" /> Catálogo da loja · Campo Grande, MS</div>
+                <h1 className="display animate-rise delay-1 mt-7 max-w-[700px] text-[clamp(3.45rem,7vw,6.7rem)] font-semibold leading-[.9]">Seu tech, <span className="gold-text">bem cuidado.</span></h1>
+                <p className="animate-rise delay-2 mt-7 max-w-[500px] text-[15px] leading-relaxed text-[#cfc0aa]">Acessórios que acompanham seu ritmo e assistência técnica de verdade, feita perto de você. Escolha online, retire na Lucca Cell.</p>
+                <div className="animate-rise delay-3 mt-8 flex flex-wrap items-center gap-3"><button type="button" onClick={jumpToCatalog} data-testid="button-hero-catalog" className="group flex items-center gap-3 rounded-full bg-[#f4b52e] px-5 py-3 text-xs font-extrabold text-[#2a1d13] transition-colors hover:bg-[#ffce57]">Explorar catálogo <ArrowRight size={16} className="transition-transform group-hover:translate-x-1" /></button><button type="button" onClick={() => document.getElementById('servicos')?.scrollIntoView({ behavior: 'smooth' })} data-testid="button-hero-services" className="rounded-full border border-[#69543c] px-5 py-3 text-xs font-bold text-[#e8d9bf] hover:border-[#eab23d] hover:text-[#ffd45e]">Conheça a assistência</button></div>
+                <div className="mt-12 flex flex-wrap gap-x-7 gap-y-3 text-[10px] font-bold uppercase tracking-[.12em] text-[#a9977c]"><span className="flex items-center gap-2"><ShieldCheck size={14} className="text-[#eeb23c]" /> Garantia Lucca</span><span className="flex items-center gap-2"><Clock3 size={14} className="text-[#eeb23c]" /> Atendimento humano</span></div>
+              </div>
+              <div className="relative hidden min-h-[330px] items-center justify-center md:flex">
+                <div className="absolute right-[7%] top-[12%] h-[255px] w-[255px] rounded-full bg-[#ed9827] opacity-20 blur-[55px]" />
+                <div className="relative h-[280px] w-[280px] rotate-6 rounded-[38px] border border-[#6e5935] bg-[#29211a] p-5 shadow-[20px_25px_0_rgba(0,0,0,.22)]">
+                  <div className="flex h-full flex-col justify-between rounded-[25px] border border-[#735b34] bg-[#1d1916] p-5">
+                    <div className="flex items-center justify-between"><span className="eyebrow text-[#d7ad55]">Lucca / 24</span><Sparkles size={19} className="text-[#f3bd38]" /></div>
+                    <div className="flex items-center justify-center"><div className="flex h-[130px] w-[76px] rotate-[-10deg] items-center justify-center rounded-[17px] border-[4px] border-[#c8c5bc] bg-[#10100f] shadow-[9px_12px_0_rgba(237,153,32,.28)]"><Smartphone size={30} className="text-[#efb735]" /><span className="absolute bottom-2 h-1 w-4 rounded-full bg-[#a8a59c]" /></div></div>
+                    <div><p className="display text-[23px] text-[#fff4dc]">Pronto para<br /><span className="gold-text">voltar a funcionar.</span></p></div>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        </section>
+          </section>
 
-        <section className="border-b border-[#dfd4c2] bg-[#eaddc0]">
-          <div className="container-lucca grid gap-4 py-5 sm:grid-cols-3">
-            <div className="flex items-center gap-3 border-[#cdbb9f] sm:border-r"><div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#f6edda] text-[#ba7521]"><PackageCheck size={17} /></div><div><strong className="block text-[12px]">Retire na loja</strong><span className="text-[10px] text-[#76634e]">Pedido separado com carinho</span></div></div>
-            <div className="flex items-center gap-3 border-[#cdbb9f] sm:border-r sm:pl-5"><div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#f6edda] text-[#ba7521]"><Wrench size={17} /></div><div><strong className="block text-[12px]">Suporte de verdade</strong><span className="text-[10px] text-[#76634e]">A gente resolve junto</span></div></div>
-            <div className="flex items-center gap-3 sm:pl-5"><div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#f6edda] text-[#ba7521]"><RotateCcw size={17} /></div><div><strong className="block text-[12px]">Troca facilitada</strong><span className="text-[10px] text-[#76634e]">Sem complicação, sem letra miúda</span></div></div>
-          </div>
-        </section>
-
-        <section className="container-lucca py-14 sm:py-20">
-          <div className="mb-7 flex items-end justify-between gap-5"><div><span className="eyebrow text-[#9c6d28]">Escolha seu caminho</span><h2 className="display mt-2 text-[clamp(2rem,4vw,3.3rem)] font-semibold leading-none text-[#2a2018]">O que você precisa hoje?</h2></div><button type="button" onClick={jumpToCatalog} data-testid="button-see-all-categories" className="hidden items-center gap-2 text-xs font-bold text-[#b46222] hover:text-[#7e431d] sm:flex">Ver tudo <ArrowRight size={15} /></button></div>
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">{categories.map(({ name, count, icon: Icon }) => <button type="button" key={name} onClick={() => { setCategory(name); jumpToCatalog(); }} data-testid={`button-category-${name.toLowerCase().replaceAll(' ', '-')}`} className={`filter-chip group flex min-h-[120px] flex-col justify-between rounded-[16px] border p-4 text-left ${category === name ? 'border-[#d99527] bg-[#e8b448] text-[#2b2016]' : 'border-[#dfd4c2] bg-[#faf7f0] text-[#3c3025] hover:bg-[#f4e8ce]'}`}><span className={`flex h-8 w-8 items-center justify-center rounded-full ${category === name ? 'bg-[#f9e5a5]' : 'bg-[#eee4d2] text-[#a8702d]'}`}><Icon size={16} /></span><span><strong className="block text-[12px]">{name}</strong>{count && <small className={`text-[10px] ${category === name ? 'text-[#72521f]' : 'text-[#9d907e]'}`}>{count} itens</small>}</span></button>)}</div>
-        </section>
-
-        <section id="catalogo" className="border-t border-[#e1d6c5] bg-[#eee5d6] py-14 sm:py-20">
-          <div className="container-lucca">
-            <div className="mb-8 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between"><div><span className="eyebrow text-[#9c6d28]">Catálogo Lucca Cell</span><h2 className="display mt-2 text-[clamp(2.2rem,4vw,3.6rem)] font-semibold leading-none text-[#2a2018]">Peças que fazem <span className="gold-text">diferença.</span></h2><p className="mt-3 max-w-[530px] text-[13px] leading-relaxed text-[#776b5d]">Curadoria de acessórios bons de usar, com a confiança de quem também coloca a mão na massa.</p></div><div className="flex flex-col gap-3 sm:flex-row"><label className="relative flex min-w-[260px] items-center"><Search size={16} className="absolute left-3.5 text-[#9c8d7b]" /><input type="search" value={query} onChange={(event) => setQuery(event.target.value)} data-testid="input-search-products" placeholder="Buscar produto ou categoria" className="h-11 w-full rounded-full border border-[#d5c7b2] bg-[#faf7f0] pl-10 pr-4 text-xs outline-none transition-colors placeholder:text-[#a79b8b] focus:border-[#d69028] focus:ring-2 focus:ring-[#e3ae4d]/25" /></label><div className="relative"><select value={sort} onChange={(event) => setSort(event.target.value)} data-testid="select-sort-products" className="h-11 w-full appearance-none rounded-full border border-[#d5c7b2] bg-[#faf7f0] px-4 pr-10 text-xs font-bold text-[#4c3b2c] outline-none focus:border-[#d69028] sm:w-[170px]"><option>Destaques</option><option>Menor preço</option><option>Maior avaliação</option></select><ChevronDown size={15} className="pointer-events-none absolute right-4 top-3.5 text-[#856d52]" /></div></div></div>
-            <div className="mb-7 flex items-center justify-between gap-3"><button type="button" onClick={() => setMobileFilters(!mobileFilters)} data-testid="button-mobile-filters" className="flex items-center gap-2 rounded-full border border-[#d5c7b2] bg-[#faf7f0] px-4 py-2.5 text-xs font-bold text-[#4c3b2c] lg:hidden"><Menu size={15} /> Filtros {category !== 'Todos' && <span className="h-1.5 w-1.5 rounded-full bg-[#df7623]" />}</button><p className="text-xs text-[#877a6b]"><strong className="text-[#433528]">{filteredProducts.length}</strong> produtos encontrados</p><span className="hidden items-center gap-1 text-[10px] uppercase tracking-[.1em] text-[#92795a] sm:flex"><ShieldCheck size={13} /> Seleção Lucca Cell</span></div>
-            <div className={`${mobileFilters ? 'block' : 'hidden'} mb-5 rounded-2xl border border-[#d8c9b5] bg-[#f9f4ea] p-4 lg:hidden`}><p className="eyebrow mb-3 text-[#9b6b27]">Filtrar por categoria</p><div className="flex flex-wrap gap-2">{categories.map(({ name }) => <button type="button" key={name} onClick={() => { setCategory(name); setMobileFilters(false); }} data-testid={`button-mobile-filter-${name.toLowerCase().replaceAll(' ', '-')}`} className={`rounded-full border px-3 py-2 text-[11px] font-bold ${category === name ? 'border-[#d99527] bg-[#efbd50] text-[#332417]' : 'border-[#ded1bd] bg-[#fffaf2] text-[#716455]'}`}>{name}</button>)}</div></div>
-            <div className="grid gap-7 lg:grid-cols-[190px_1fr]">
-              <aside className="hidden lg:block"><div className="sticky top-5 rounded-2xl border border-[#dbcfbe] bg-[#f8f3e8] p-4"><div className="mb-4 flex items-center justify-between"><span className="eyebrow text-[#987040]">Categorias</span><SlidersHorizontal size={15} className="text-[#9b7750]" /></div><div className="space-y-1">{categories.map(({ name, count, icon: Icon }) => <button type="button" key={name} onClick={() => setCategory(name)} data-testid={`button-sidebar-${name.toLowerCase().replaceAll(' ', '-')}`} className={`flex w-full items-center justify-between rounded-lg px-2.5 py-2.5 text-left text-[11px] transition-colors ${category === name ? 'bg-[#edc267] font-extrabold text-[#332417]' : 'text-[#76695a] hover:bg-[#efe2cc]'}`}><span className="flex items-center gap-2"><Icon size={14} />{name}</span>{count && <span className="font-mono text-[9px] opacity-70">{count}</span>}</button>)}</div><div className="mt-6 border-t border-[#dfd1bb] pt-5"><p className="eyebrow text-[#987040]">Na loja</p><p className="mt-2 text-[11px] leading-relaxed text-[#807262]">Precisa de ajuda para escolher? Fale com quem entende.</p><button type="button" onClick={() => window.alert('WhatsApp demo: atendimento Lucca Cell')} data-testid="button-sidebar-whatsapp" className="mt-3 flex items-center gap-2 text-[11px] font-extrabold text-[#bd5e22]"><MessageCircle size={14} /> Chamar no WhatsApp</button></div></div></aside>
-              <div>{filteredProducts.length > 0 ? <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">{filteredProducts.map((product, index) => <div key={product.id} style={{ animationDelay: `${index * 55}ms` }}><ProductCard product={product} favorite={favorites.includes(product.id)} onFavorite={() => toggleFavorite(product.id)} onAdd={() => addToCart(product)} /></div>)}</div> : <div className="flex min-h-[330px] flex-col items-center justify-center rounded-[20px] border border-dashed border-[#cbbda9] bg-[#f8f3e8] px-6 text-center"><div className="mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-[#ecdfc5] text-[#b47328]"><Search size={25} /></div><h3 className="display text-[25px] text-[#362a20]">Nada por aqui, ainda.</h3><p className="mt-2 max-w-[340px] text-xs leading-relaxed text-[#817567]">Tente outro termo ou limpe os filtros para encontrar o acessório certo.</p><button type="button" onClick={() => { setQuery(''); setCategory('Todos'); }} data-testid="button-clear-filters" className="mt-5 rounded-full bg-[#211b17] px-5 py-2.5 text-xs font-bold text-[#fff5e5]">Limpar filtros</button></div>}<div className="mt-8 flex items-center justify-between rounded-2xl bg-[#211b17] px-5 py-4 text-[#fff7e6] sm:px-7"><div className="flex items-center gap-3"><div className="hidden h-9 w-9 items-center justify-center rounded-full bg-[#f3bb3b] text-[#2b2016] sm:flex"><Sparkles size={17} /></div><p className="text-[11px] leading-relaxed text-[#d8c8af]"><strong className="text-[#fff3d8]">Achou o que queria?</strong> <span className="hidden sm:inline">Separamos para você e avisamos quando estiver pronto.</span></p></div><button type="button" onClick={() => setCartOpen(true)} data-testid="button-open-cart-catalog" className="flex shrink-0 items-center gap-2 text-[11px] font-extrabold text-[#f3bd3c]">Ver sacola <ArrowRight size={14} /></button></div></div>
+          <section className="border-b border-[#dfd4c2] bg-[#eaddc0]">
+            <div className="container-lucca grid gap-4 py-5 sm:grid-cols-3">
+              <div className="flex items-center gap-3 border-[#cdbb9f] sm:border-r"><div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#f6edda] text-[#ba7521]"><PackageCheck size={17} /></div><div><strong className="block text-[12px]">Retire na loja</strong><span className="text-[10px] text-[#76634e]">Pedido separado com carinho</span></div></div>
+              <div className="flex items-center gap-3 border-[#cdbb9f] sm:border-r sm:pl-5"><div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#f6edda] text-[#ba7521]"><Wrench size={17} /></div><div><strong className="block text-[12px]">Suporte de verdade</strong><span className="text-[10px] text-[#76634e]">A gente resolve junto</span></div></div>
+              <div className="flex items-center gap-3 sm:pl-5"><div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#f6edda] text-[#ba7521]"><RotateCcw size={17} /></div><div><strong className="block text-[12px]">Troca facilitada</strong><span className="text-[10px] text-[#76634e]">Sem complicação, sem letra miúda</span></div></div>
             </div>
-          </div>
-        </section>
+          </section>
 
-        <section id="servicos" className="bg-[#211b17] py-16 text-[#fff7e6] sm:py-20">
-          <div className="container-lucca grid gap-10 md:grid-cols-[.85fr_1.15fr] md:items-center"><div><span className="eyebrow text-[#e6aa32]">Além do balcão</span><h2 className="display mt-3 text-[clamp(2.2rem,4vw,4rem)] font-semibold leading-[.94]">Quando dá problema, <span className="gold-text">a gente resolve.</span></h2><p className="mt-5 max-w-[410px] text-sm leading-relaxed text-[#bdaE98]">Seu aparelho não precisa virar uma dor de cabeça. A equipe Lucca faz diagnóstico claro, serviço cuidadoso e explica tudo sem enrolação.</p><button type="button" onClick={() => window.alert('WhatsApp demo: agendamento de assistência')} data-testid="button-book-service" className="mt-7 flex items-center gap-2 rounded-full bg-[#f4b52e] px-5 py-3 text-xs font-extrabold text-[#261c14] hover:bg-[#ffd35d]">Agendar avaliação <ArrowRight size={15} /></button></div><div className="grid gap-3 sm:grid-cols-2"><div className="rounded-2xl border border-[#4b3927] bg-[#2c241d] p-5"><Wrench className="mb-7 text-[#f4b52e]" size={23} /><h3 className="display text-[21px]">Diagnóstico sem surpresa</h3><p className="mt-2 text-xs leading-relaxed text-[#bcae98]">Você entende o que aconteceu e recebe o orçamento antes de qualquer reparo.</p></div><div className="rounded-2xl border border-[#4b3927] bg-[#2c241d] p-5 sm:translate-y-7"><CircleCheck className="mb-7 text-[#f4b52e]" size={23} /><h3 className="display text-[21px]">Cuidado em cada detalhe</h3><p className="mt-2 text-xs leading-relaxed text-[#bcae98]">Peças selecionadas, bancada organizada e a mesma atenção para um cabo ou uma tela.</p></div><div className="rounded-2xl border border-[#4b3927] bg-[#2c241d] p-5"><Truck className="mb-7 text-[#f4b52e]" size={23} /><h3 className="display text-[21px]">Retire do seu jeito</h3><p className="mt-2 text-xs leading-relaxed text-[#bcae98]">Compra online, retirada rápida no endereço da loja em Campo Grande.</p></div><div className="rounded-2xl border border-[#4b3927] bg-[#2c241d] p-5 sm:translate-y-7"><Heart className="mb-7 text-[#f4b52e]" size={23} /><h3 className="display text-[21px]">Pós-venda próximo</h3><p className="mt-2 text-xs leading-relaxed text-[#bcae98]">A conversa continua depois da compra. Se precisar, chama a gente.</p></div></div></div>
-        </section>
+          <section className="container-lucca py-14 sm:py-20">
+            <div className="mb-7 flex items-end justify-between gap-5"><div><span className="eyebrow text-[#9c6d28]">Escolha seu caminho</span><h2 className="display mt-2 text-[clamp(2rem,4vw,3.3rem)] font-semibold leading-none text-[#2a2018]">O que você precisa hoje?</h2></div><button type="button" onClick={jumpToCatalog} data-testid="button-see-all-categories" className="hidden items-center gap-2 text-xs font-bold text-[#b46222] hover:text-[#7e431d] sm:flex">Ver tudo <ArrowRight size={15} /></button></div>
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">{categories.map(({ name, count, icon: Icon }) => <button type="button" key={name} onClick={() => { setCategory(name); jumpToCatalog(); }} data-testid={`button-category-${name.toLowerCase().replaceAll(' ', '-')}`} className={`filter-chip group flex min-h-[120px] flex-col justify-between rounded-[16px] border p-4 text-left ${category === name ? 'border-[#d99527] bg-[#e8b448] text-[#2b2016]' : 'border-[#dfd4c2] bg-[#faf7f0] text-[#3c3025] hover:bg-[#f4e8ce]'}`}><span className={`flex h-8 w-8 items-center justify-center rounded-full ${category === name ? 'bg-[#f9e5a5]' : 'bg-[#eee4d2] text-[#a8702d]'}`}><Icon size={16} /></span><span><strong className="block text-[12px]">{name}</strong>{count && <small className={`text-[10px] ${category === name ? 'text-[#72521f]' : 'text-[#9d907e]'}`}>{count} itens</small>}</span></button>)}</div>
+          </section>
 
-        <section id="rodape" className="bg-[#f4efe5] py-14 sm:py-20"><div className="container-lucca grid gap-10 md:grid-cols-[1.1fr_.9fr] md:items-end"><div><span className="eyebrow text-[#a3712c]">Por perto é melhor</span><h2 className="display mt-3 max-w-[600px] text-[clamp(2.3rem,5vw,4.7rem)] font-semibold leading-[.9] text-[#2c2118]">Tecnologia boa tem <span className="gold-text">endereço.</span></h2><p className="mt-5 max-w-[440px] text-sm leading-relaxed text-[#776b5c]">Uma loja local para resolver o que é urgente, encontrar o que faltava e sair com a sensação de que foi bem atendido.</p></div><div className="rounded-2xl border border-[#dfd1bc] bg-[#fbf8f0] p-5"><div className="flex items-start gap-3"><div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#f1d58e] text-[#89591e]"><MapPin size={17} /></div><div><strong className="block text-sm">Lucca Cell · Campo Grande</strong><p className="mt-1 text-xs leading-relaxed text-[#817464]">Rua das Acácias, 238 · Jardim dos Estados<br />Seg a Sex, 8h às 18h · Sáb, 8h às 13h</p></div></div><button type="button" onClick={() => window.alert('WhatsApp demo: como chegar na Lucca Cell')} data-testid="button-store-directions" className="mt-5 flex w-full items-center justify-center gap-2 rounded-full bg-[#211b17] py-3 text-xs font-extrabold text-[#fff5e6] hover:bg-[#d87522]">Falar com a loja <MessageCircle size={15} /></button></div></div><div className="container-lucca mt-14 border-t border-[#ded2c1] pt-6"><div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"><img src={logoPath} alt="Lucca Cell" className="h-[72px] w-[130px] object-contain object-left" /><div className="text-[10px] text-[#9b8b79]">© 2024 Lucca Cell · Assistência técnica & acessórios</div><div className="flex gap-4 text-[#776b5c]"><button type="button" onClick={() => window.alert('Instagram demo')} data-testid="button-footer-instagram" aria-label="Instagram"><span className="text-xs font-bold">IG</span></button><button type="button" onClick={() => window.alert('WhatsApp demo')} data-testid="button-footer-whatsapp" aria-label="WhatsApp"><MessageCircle size={16} /></button></div></div></div></section>
-      </main>
+          <section id="catalogo" className="border-t border-[#e1d6c5] bg-[#eee5d6] py-14 sm:py-20">
+            <div className="container-lucca">
+              <div className="mb-8 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between"><div><span className="eyebrow text-[#9c6d28]">Catálogo Lucca Cell</span><h2 className="display mt-2 text-[clamp(2.2rem,4vw,3.6rem)] font-semibold leading-none text-[#2a2018]">Peças que fazem <span className="gold-text">diferença.</span></h2><p className="mt-3 max-w-[530px] text-[13px] leading-relaxed text-[#776b5d]">Curadoria de acessórios bons de usar, com a confiança de quem também coloca a mão na massa.</p></div><div className="flex flex-col gap-3 sm:flex-row"><label className="relative flex min-w-[260px] items-center"><Search size={16} className="absolute left-3.5 text-[#9c8d7b]" /><input type="search" value={query} onChange={(event) => setQuery(event.target.value)} data-testid="input-search-products" placeholder="Buscar produto ou categoria" className="h-11 w-full rounded-full border border-[#d5c7b2] bg-[#faf7f0] pl-10 pr-4 text-xs outline-none transition-colors placeholder:text-[#a79b8b] focus:border-[#d69028] focus:ring-2 focus:ring-[#e3ae4d]/25" /></label><div className="relative"><select value={sort} onChange={(event) => setSort(event.target.value)} data-testid="select-sort-products" className="h-11 w-full appearance-none rounded-full border border-[#d5c7b2] bg-[#faf7f0] px-4 pr-10 text-xs font-bold text-[#4c3b2c] outline-none focus:border-[#d69028] sm:w-[170px]"><option>Destaques</option><option>Menor preço</option><option>Maior avaliação</option></select><ChevronDown size={15} className="pointer-events-none absolute right-4 top-3.5 text-[#856d52]" /></div></div></div>
+              <div className="mb-7 flex items-center justify-between gap-3"><button type="button" onClick={() => setMobileFilters(!mobileFilters)} data-testid="button-mobile-filters" className="flex items-center gap-2 rounded-full border border-[#d5c7b2] bg-[#faf7f0] px-4 py-2.5 text-xs font-bold text-[#4c3b2c] lg:hidden"><Menu size={15} /> Filtros {category !== 'Todos' && <span className="h-1.5 w-1.5 rounded-full bg-[#df7623]" />}</button><p className="text-xs text-[#877a6b]"><strong className="text-[#433528]">{filteredProducts.length}</strong> produtos encontrados</p><span className="hidden items-center gap-1 text-[10px] uppercase tracking-[.1em] text-[#92795a] sm:flex"><ShieldCheck size={13} /> Seleção Lucca Cell</span></div>
+              <div className={`${mobileFilters ? 'block' : 'hidden'} mb-5 rounded-2xl border border-[#d8c9b5] bg-[#f9f4ea] p-4 lg:hidden`}><p className="eyebrow mb-3 text-[#9b6b27]">Filtrar por categoria</p><div className="flex flex-wrap gap-2">{categories.map(({ name }) => <button type="button" key={name} onClick={() => { setCategory(name); setMobileFilters(false); }} data-testid={`button-mobile-filter-${name.toLowerCase().replaceAll(' ', '-')}`} className={`rounded-full border px-3 py-2 text-[11px] font-bold ${category === name ? 'border-[#d99527] bg-[#efbd50] text-[#332417]' : 'border-[#ded1bd] bg-[#fffaf2] text-[#716455]'}`}>{name}</button>)}</div></div>
+              <div className="grid gap-7 lg:grid-cols-[190px_1fr]">
+                <aside className="hidden lg:block"><div className="sticky top-5 rounded-2xl border border-[#dbcfbe] bg-[#f8f3e8] p-4"><div className="mb-4 flex items-center justify-between"><span className="eyebrow text-[#987040]">Categorias</span><SlidersHorizontal size={15} className="text-[#9b7750]" /></div><div className="space-y-1">{categories.map(({ name, count, icon: Icon }) => <button type="button" key={name} onClick={() => setCategory(name)} data-testid={`button-sidebar-${name.toLowerCase().replaceAll(' ', '-')}`} className={`flex w-full items-center justify-between rounded-lg px-2.5 py-2.5 text-left text-[11px] transition-colors ${category === name ? 'bg-[#edc267] font-extrabold text-[#332417]' : 'text-[#76695a] hover:bg-[#efe2cc]'}`}><span className="flex items-center gap-2"><Icon size={14} />{name}</span>{count && <span className="font-mono text-[9px] opacity-70">{count}</span>}</button>)}</div><div className="mt-6 border-t border-[#dfd1bb] pt-5"><p className="eyebrow text-[#987040]">Na loja</p><p className="mt-2 text-[11px] leading-relaxed text-[#807262]">Precisa de ajuda para escolher? Fale com quem entende.</p><button type="button" onClick={() => window.alert('WhatsApp demo: atendimento Lucca Cell')} data-testid="button-sidebar-whatsapp" className="mt-3 flex items-center gap-2 text-[11px] font-extrabold text-[#bd5e22]"><MessageCircle size={14} /> Chamar no WhatsApp</button></div></div></aside>
+                <div>{filteredProducts.length > 0 ? <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">{filteredProducts.map((product, index) => <div key={product.id} style={{ animationDelay: `${index * 55}ms` }}><ProductCard product={product} favorite={favorites.includes(product.id)} onFavorite={() => toggleFavorite(product.id)} onAdd={() => addToCart(product)} /></div>)}</div> : <div className="flex min-h-[330px] flex-col items-center justify-center rounded-[20px] border border-dashed border-[#cbbda9] bg-[#f8f3e8] px-6 text-center"><div className="mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-[#ecdfc5] text-[#b47328]"><Search size={25} /></div><h3 className="display text-[25px] text-[#362a20]">Nada por aqui, ainda.</h3><p className="mt-2 max-w-[340px] text-xs leading-relaxed text-[#817567]">Tente outro termo ou limpe os filtros para encontrar o acessório certo.</p><button type="button" onClick={() => { setQuery(''); setCategory('Todos'); }} data-testid="button-clear-filters" className="mt-5 rounded-full bg-[#211b17] px-5 py-2.5 text-xs font-bold text-[#fff5e5]">Limpar filtros</button></div>}<div className="mt-8 flex items-center justify-between rounded-2xl bg-[#211b17] px-5 py-4 text-[#fff7e6] sm:px-7"><div className="flex items-center gap-3"><div className="hidden h-9 w-9 items-center justify-center rounded-full bg-[#f3bb3b] text-[#2b2016] sm:flex"><Sparkles size={17} /></div><p className="text-[11px] leading-relaxed text-[#d8c8af]"><strong className="text-[#fff3d8]">Achou o que queria?</strong> <span className="hidden sm:inline">Separamos para você e avisamos quando estiver pronto.</span></p></div><button type="button" onClick={() => setCartOpen(true)} data-testid="button-open-cart-catalog" className="flex shrink-0 items-center gap-2 text-[11px] font-extrabold text-[#f3bd3c]">Ver sacola <ArrowRight size={14} /></button></div></div>
+              </div>
+            </div>
+          </section>
+
+          <section id="servicos" className="bg-[#211b17] py-16 text-[#fff7e6] sm:py-20">
+            <div className="container-lucca grid gap-10 md:grid-cols-[.85fr_1.15fr] md:items-center"><div><span className="eyebrow text-[#e6aa32]">Além do balcão</span><h2 className="display mt-3 text-[clamp(2.2rem,4vw,4rem)] font-semibold leading-[.94]">Quando dá problema, <span className="gold-text">a gente resolve.</span></h2><p className="mt-5 max-w-[410px] text-sm leading-relaxed text-[#bdaE98]">Seu aparelho não precisa virar uma dor de cabeça. A equipe Lucca faz diagnóstico claro, serviço cuidadoso e explica tudo sem enrolação.</p><button type="button" onClick={() => window.alert('WhatsApp demo: agendamento de assistência')} data-testid="button-book-service" className="mt-7 flex items-center gap-2 rounded-full bg-[#f4b52e] px-5 py-3 text-xs font-extrabold text-[#261c14] hover:bg-[#ffd35d]">Agendar avaliação <ArrowRight size={15} /></button></div><div className="grid gap-3 sm:grid-cols-2"><div className="rounded-2xl border border-[#4b3927] bg-[#2c241d] p-5"><Wrench className="mb-7 text-[#f4b52e]" size={23} /><h3 className="display text-[21px]">Diagnóstico sem surpresa</h3><p className="mt-2 text-xs leading-relaxed text-[#bcae98]">Você entende o que aconteceu e recebe o orçamento antes de qualquer reparo.</p></div><div className="rounded-2xl border border-[#4b3927] bg-[#2c241d] p-5 sm:translate-y-7"><CircleCheck className="mb-7 text-[#f4b52e]" size={23} /><h3 className="display text-[21px]">Cuidado em cada detalhe</h3><p className="mt-2 text-xs leading-relaxed text-[#bcae98]">Peças selecionadas, bancada organizada e a mesma atenção para um cabo ou uma tela.</p></div><div className="rounded-2xl border border-[#4b3927] bg-[#2c241d] p-5"><Truck className="mb-7 text-[#f4b52e]" size={23} /><h3 className="display text-[21px]">Retire do seu jeito</h3><p className="mt-2 text-xs leading-relaxed text-[#bcae98]">Compra online, retirada rápida no endereço da loja em Campo Grande.</p></div><div className="rounded-2xl border border-[#4b3927] bg-[#2c241d] p-5 sm:translate-y-7"><Heart className="mb-7 text-[#f4b52e]" size={23} /><h3 className="display text-[21px]">Pós-venda próximo</h3><p className="mt-2 text-xs leading-relaxed text-[#bcae98]">A conversa continua depois da compra. Se precisar, chama a gente.</p></div></div></div>
+          </section>
+
+          <section id="rodape" className="bg-[#f4efe5] py-14 sm:py-20"><div className="container-lucca grid gap-10 md:grid-cols-[1.1fr_.9fr] md:items-end"><div><span className="eyebrow text-[#a3712c]">Por perto é melhor</span><h2 className="display mt-3 max-w-[600px] text-[clamp(2.3rem,5vw,4.7rem)] font-semibold leading-[.9] text-[#2c2118]">Tecnologia boa tem <span className="gold-text">endereço.</span></h2><p className="mt-5 max-w-[440px] text-sm leading-relaxed text-[#776b5c]">Uma loja local para resolver o que é urgente, encontrar o que faltava e sair com a sensação de que foi bem atendido.</p></div><div className="rounded-2xl border border-[#dfd1bc] bg-[#fbf8f0] p-5"><div className="flex items-start gap-3"><div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#f1d58e] text-[#89591e]"><MapPin size={17} /></div><div><strong className="block text-sm">Lucca Cell · Campo Grande</strong><p className="mt-1 text-xs leading-relaxed text-[#817464]">Rua das Acácias, 238 · Jardim dos Estados<br />Seg a Sex, 8h às 18h · Sáb, 8h às 13h</p></div></div><button type="button" onClick={() => window.alert('WhatsApp demo: como chegar na Lucca Cell')} data-testid="button-store-directions" className="mt-5 flex w-full items-center justify-center gap-2 rounded-full bg-[#211b17] py-3 text-xs font-extrabold text-[#fff5e6] hover:bg-[#d87522]">Falar com a loja <MessageCircle size={15} /></button></div></div><div className="container-lucca mt-14 border-t border-[#ded2c1] pt-6"><div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"><img src={logoPath} alt="Lucca Cell" className="h-[72px] w-[130px] object-contain object-left" /><div className="text-[10px] text-[#9b8b79]">© 2024 Lucca Cell · Assistência técnica & acessórios</div><div className="flex gap-4 text-[#776b5c]"><button type="button" onClick={() => window.alert('Instagram demo')} data-testid="button-footer-instagram" aria-label="Instagram"><span className="text-xs font-bold">IG</span></button><button type="button" onClick={() => window.alert('WhatsApp demo')} data-testid="button-footer-whatsapp" aria-label="WhatsApp"><MessageCircle size={16} /></button></div></div></div></section>
+        </main>
+      )}
+
       {toast && <div role="status" data-testid="status-toast" className="toast-pop fixed bottom-5 left-1/2 z-[60] flex -translate-x-1/2 items-center gap-2 rounded-full bg-[#211b17] px-4 py-3 text-xs font-bold text-[#fff7e6] shadow-[0_10px_25px_rgba(41,25,8,.24)]"><Check size={15} className="text-[#f3bd3c]" /> {toast}</div>}
       <CartDrawer open={cartOpen} lines={lines} onClose={() => setCartOpen(false)} onQuantity={changeQuantity} onRemove={removeLine} />
+
+      {/* Admin Login Modal */}
+      <AdminLoginModal
+        isOpen={isAdminLoginModalOpen}
+        onClose={() => setIsAdminLoginModalOpen(false)}
+        onLoginSuccess={() => {
+          setIsAdminLoggedIn(true);
+          setIsAdminLoginModalOpen(false);
+          setShowAdminPanel(true);
+        }}
+      />
     </div>
   );
 }

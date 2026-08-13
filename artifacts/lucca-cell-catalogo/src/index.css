@@ -146,3 +146,19 @@
   .container-lucca { width: min(100% - 28px, 1240px); }
   .hero-orb { width: 280px; height: 280px; right: -90px; top: 30px; }
 }
+
+/* AI Laser Scanning Beam */
+@keyframes aiScan {
+  0% { top: 0%; opacity: 0.8; }
+  50% { top: 92%; opacity: 1; }
+  100% { top: 0%; opacity: 0.8; }
+}
+
+.ai-scan-line {
+  position: absolute;
+  left: 0; right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, transparent, #f4b52e, #e99c28, transparent);
+  box-shadow: 0 0 15px #f4b52e, 0 0 5px #ffe475;
+  animation: aiScan 2.5s infinite ease-in-out;
+}
