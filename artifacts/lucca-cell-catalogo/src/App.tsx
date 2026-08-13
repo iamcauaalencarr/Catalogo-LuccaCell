@@ -260,7 +260,7 @@ export function App() {
   const jumpToCatalog = () => document.getElementById('catalogo')?.scrollIntoView({ behavior: 'smooth' });
 
   // CRUD handlers para o AdminPanel com sincronização Supabase
-  const handleAddProduct = (newProd: Omit<Product, 'id' | 'rating' | 'reviews'>) => {
+  const handleAddProduct = async (newProd: Omit<Product, 'id' | 'rating' | 'reviews'>) => {
     const nextId = productList.length > 0 ? Math.max(...productList.map(p => p.id)) + 1 : 1;
     const fullProduct: Product = {
       ...newProd,
@@ -270,22 +270,35 @@ export function App() {
     };
     const updated = [fullProduct, ...productList];
     setProductList(updated);
-    syncProductsToSupabase(updated);
-    showToast(`Produto "${fullProduct.name}" cadastrado!`);
+    const synced = await syncProductsToSupabase(updated);
+    if (synced) {
+      showToast(`Produto "${fullProduct.name}" cadastrado e sincronizado na nuvem! ✨`);
+    } else {
+      showToast(`Produto "${fullProduct.name}" cadastrado localmente! (Execute o SQL no Supabase para sincronizar)`);
+    }
   };
 
-  const handleEditProduct = (updatedProd: Product) => {
+  const handleEditProduct = async (updatedProd: Product) => {
     const updated = productList.map(p => p.id === updatedProd.id ? updatedProd : p);
     setProductList(updated);
-    syncProductsToSupabase(updated);
-    showToast(`Produto "${updatedProd.name}" atualizado!`);
+    const synced = await syncProductsToSupabase(updated);
+    if (synced) {
+      showToast(`Produto "${updatedProd.name}" atualizado e sincronizado na nuvem! ✨`);
+    } else {
+      showToast(`Produto "${updatedProd.name}" atualizado localmente!`);
+    }
   };
 
-  const handleDeleteProduct = (id: number) => {
+  const handleDeleteProduct = async (id: number) => {
     const updated = productList.filter(p => p.id !== id);
     setProductList(updated);
-    deleteProductFromSupabase(id);
-    showToast('Produto removido do catálogo');
+    const deleted = await deleteProductFromSupabase(id);
+    await syncProductsToSupabase(updated);
+    if (deleted) {
+      showToast('Produto removido do catálogo e da nuvem');
+    } else {
+      showToast('Produto removido localmente');
+    }
   };
 
   const handleOpenAdmin = () => {
