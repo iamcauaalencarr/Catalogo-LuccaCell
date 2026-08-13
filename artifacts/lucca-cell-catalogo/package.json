@@ -79,6 +79,7 @@
     "zod": "catalog:"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.112.3"
+    "@supabase/supabase-js": "^2.112.3",
+    "vite": "catalog:"
   }
 }

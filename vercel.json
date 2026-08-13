@@ -1,6 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "installCommand": "pnpm install --prod=false",
+  "installCommand": "pnpm install --no-frozen-lockfile",
   "buildCommand": "pnpm --filter @workspace/lucca-cell-catalogo run build",
   "outputDirectory": "artifacts/lucca-cell-catalogo/dist",
   "cleanUrls": true,
