@@ -1,8 +1,7 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "framework": "vite",
-  "buildCommand": "pnpm --filter @workspace/lucca-cell-catalogo build",
-  "outputDirectory": "artifacts/lucca-cell-catalogo/dist/public",
+  "buildCommand": "pnpm --filter @workspace/lucca-cell-catalogo run build",
+  "outputDirectory": "artifacts/lucca-cell-catalogo/dist",
   "cleanUrls": true,
   "trailingSlash": false,
   "rewrites": [

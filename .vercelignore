@@ -1,0 +1,5 @@
+artifacts/api-server
+artifacts/mockup-sandbox
+lib/db
+scripts
+.agents
