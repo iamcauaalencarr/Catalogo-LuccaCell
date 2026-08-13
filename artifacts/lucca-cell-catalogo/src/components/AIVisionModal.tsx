@@ -31,6 +31,12 @@ export function AIVisionModal({ isOpen, onClose, onApplyAIData }: AIVisionModalP
       return;
     }
 
+    const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+    if (file.size > MAX_FILE_SIZE) {
+      setError('A imagem é muito pesada (máximo 10MB). Por favor, selecione uma foto menor.');
+      return;
+    }
+
     const reader = new FileReader();
     reader.onload = () => {
       const base64 = reader.result as string;
@@ -76,9 +82,9 @@ export function AIVisionModal({ isOpen, onClose, onApplyAIData }: AIVisionModalP
   };
 
   // Helpers de UI
-  const confidencePercent = scannedResult ? Math.round(scannedResult.confidence * 100) : 0;
-  const isLowConfidence = scannedResult ? scannedResult.confidence < 0.70 : false;
-  const canApply = scannedResult?.productIdentified && !isLowConfidence;
+  const confidencePercent = scannedResult ? Math.round(scannedResult.confidence * 100) : 85;
+  const isLowConfidence = scannedResult ? scannedResult.confidence < 0.50 : false;
+  const canApply = Boolean(scannedResult);
 
   const confidenceColor = confidencePercent >= 80
     ? '#22c55e'
@@ -93,13 +99,18 @@ export function AIVisionModal({ isOpen, onClose, onApplyAIData }: AIVisionModalP
         onClick={onClose}
       />
 
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
         <div 
-          className="relative w-full max-w-lg overflow-hidden rounded-[24px] border border-[#4b3927] bg-[#211b17] text-[#fff7e6] shadow-[0_25px_60px_rgba(0,0,0,0.6)] animate-rise max-h-[90vh] flex flex-col"
+          className="relative w-full max-w-lg overflow-hidden rounded-t-[24px] sm:rounded-[24px] border border-[#4b3927] bg-[#211b17] text-[#fff7e6] shadow-[0_25px_60px_rgba(0,0,0,0.6)] animate-rise max-h-[92vh] sm:max-h-[90vh] flex flex-col"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Top Gold Line */}
           <div className="h-1.5 w-full bg-gradient-to-r from-[#d97621] via-[#f4b52e] to-[#e99c28]" />
+
+          {/* Mobile Drag Indicator */}
+          <div className="sm:hidden pt-2 flex justify-center">
+            <div className="w-12 h-1 rounded-full bg-[#45382c]" />
+          </div>
 
           {/* Close button */}
           <button

@@ -32,14 +32,27 @@ _Populate as you build — non-obvious choices a reader couldn't infer from the 
 
 _Describe the high-level user-facing capabilities of this app once they exist._
 
-## User preferences
+## User preferences & AGENT MANDATORY RULES
 
-_Populate as you build — explicit user instructions worth remembering across sessions._
+- **GitHub Issue & PR Workflow (Obrigatório)**:
+  - NENHUMA alteração (Correção, Melhoria ou Nova Função) deve ser feita sem que uma **Issue no GitHub** tenha sido criada primeiro.
+  - TODO deploy e alteração deve obrigatoriamente ser gerenciado via **Pull Request (PR)**.
+  - A descrição do PR DEVE obrigatoriamente referenciar a Issue criada (ex: `Closes #123` ou `Fixes #45`).
+  - Qualquer agente AI (qualquer modelo) DEVE ler `CONTRIBUTING.md` e seguir estritamente este padrão.
+
+- **Motion Principles (Design Principles)**:
+  - Toda e qualquer interface DEVE ter esqueletos (Skeleton Loaders), Lazy Loading de componentes/imagens, animações suaves de Entrada, Saída, Carregamento e Progresso em TODOS os elementos.
+
+- **Observabilidade, Qualidade & Testes**:
+  - Toda aplicação deve conter suporte à Observabilidade (Sentry, Datadog, NewRelic, OpenTelemetry), Qualidade (Biome, Arch-contract, Commitlint, Knip, Stryker) e Testes (Vitest, Playwright, Codecov).
 
 ## Gotchas
 
-_Populate as you build — sharp edges, "always run X before Y" rules._
+- Sempre verifique a existência de Issues antes de iniciar tarefas.
+- Nunca faça commits diretos em `main`/`master` — utilize sempre branches e PRs.
 
 ## Pointers
 
-- See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and package details
+- Veja [CONTRIBUTING.md](file:///c:/Users/lucca/OneDrive/Desktop/Catalogo-Lucca%20Cell/CONTRIBUTING.md) para detalhes de contribuição e governança.
+- Veja `.github/PULL_REQUEST_TEMPLATE.md` para criar PRs no padrão correto.
+

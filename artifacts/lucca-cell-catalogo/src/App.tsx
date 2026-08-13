@@ -5,42 +5,40 @@ import { ErrorBoundary } from '@/components/error-boundary';
 import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import logoPath from '@assets/LOGO_1_1786564407567.png';
-import { AdminLoginModal } from '@/components/AdminLoginModal';
+import { AdminAuthModal } from '@/components/AdminAuthModal';
 import { AdminPanel, type Product, type Category } from '@/components/AdminPanel';
+import { signOutAdminFromSupabase, getSupabaseUser, AdminProfile } from '@/lib/supabase';
 
 const queryClient = new QueryClient();
 
 type CartLine = { product: Product; quantity: number };
 
-const categories: { name: Category; count?: string; icon: LucideIcon }[] = [
+const categoryDefinitions: { name: Category; icon: LucideIcon }[] = [
   { name: 'Todos', icon: Sparkles },
-  { name: 'Capinhas', count: '24', icon: Smartphone },
-  { name: 'Cabos e carregadores', count: '18', icon: Zap },
-  { name: 'Áudio', count: '12', icon: Headphones },
-  { name: 'Proteção', count: '09', icon: ShieldCheck },
-  { name: 'Assistência', count: '06', icon: Wrench },
+  { name: 'Capinhas', icon: Smartphone },
+  { name: 'Cabos e carregadores', icon: Zap },
+  { name: 'Áudio', icon: Headphones },
+  { name: 'Proteção', icon: ShieldCheck },
+  { name: 'Assistência', icon: Wrench },
 ];
 
-const INITIAL_PRODUCTS: Product[] = [
-  { id: 1, name: 'Capa Armor MagSafe', category: 'Capinhas', price: 89.9, oldPrice: 109.9, installment: '3x de R$ 29,97', rating: 4.9, reviews: 38, tag: 'Mais pedido', description: 'Proteção firme, toque macio e alinhamento perfeito para carregamento sem fio.', visual: 'phone', tone: 'linear-gradient(135deg,#29251f,#bd7824)' },
-  { id: 2, name: 'Cabo Nylon Turbo 2m', category: 'Cabos e carregadores', price: 54.9, installment: '2x de R$ 27,45', rating: 4.8, reviews: 27, tag: 'Novo', description: 'Resistente para a rotina, com carga rápida e acabamento trançado premium.', visual: 'cable', tone: 'linear-gradient(145deg,#e9d6a5,#fbf5df)' },
-  { id: 3, name: 'Fone Pulse TWS', category: 'Áudio', price: 149.9, oldPrice: 179.9, installment: '4x de R$ 37,48', rating: 4.7, reviews: 51, tag: 'Oferta', description: 'Som encorpado, estojo compacto e bateria para acompanhar o seu dia.', visual: 'audio', tone: 'linear-gradient(140deg,#20201e,#5d5b55)' },
-  { id: 4, name: 'Película 3D Privacidade', category: 'Proteção', price: 39.9, installment: 'à vista ou 2x', rating: 4.9, reviews: 64, tag: 'Instalação grátis', description: 'Privacidade de lado a lado e proteção contra riscos sem perder a nitidez.', visual: 'shield', tone: 'linear-gradient(135deg,#d4d9d7,#f7fbfa)' },
-  { id: 5, name: 'Carregador GaN 33W', category: 'Cabos e carregadores', price: 119.9, installment: '3x de R$ 39,97', rating: 4.8, reviews: 19, tag: 'Mais pedido', description: 'Potência inteligente em um corpo pequeno para sua mochila e sua mesa.', visual: 'battery', tone: 'linear-gradient(135deg,#f2c85b,#f7eac0)' },
-  { id: 6, name: 'Capa Soft Touch Urban', category: 'Capinhas', price: 69.9, installment: '2x de R$ 34,95', rating: 4.6, reviews: 22, description: 'Minimalista por fora, absorção de impacto por dentro. Feita para usar muito.', visual: 'tablet', tone: 'linear-gradient(135deg,#d96131,#edac54)' },
-  { id: 7, name: 'Headphone Studio Lite', category: 'Áudio', price: 229.9, installment: '5x de R$ 45,98', rating: 4.8, reviews: 17, tag: 'Som imersivo', description: 'Conforto de longa duração e graves presentes para trabalho, estudo ou lazer.', visual: 'laptop', tone: 'linear-gradient(135deg,#d3c4ab,#f4eee1)' },
-  { id: 8, name: 'Kit Reparo Express', category: 'Assistência', price: 79.9, installment: '2x de R$ 39,95', rating: 5, reviews: 12, tag: 'Lucca recomenda', description: 'Diagnóstico, limpeza de conectores e revisão essencial para o seu aparelho.', visual: 'repair', tone: 'linear-gradient(135deg,#22201d,#4e3e2b)' },
-];
+
 
 const formatPrice = (value: number) => value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
+import { LazyImage } from '@/components/ui/lazy-image';
+import { Skeleton, ProductCardSkeleton } from '@/components/ui/skeleton';
+import { ProgressBar } from '@/components/ui/progress-bar';
+import { FadeIn, ScaleIn, StaggerContainer, StaggerItem } from '@/components/ui/motion-wrapper';
 
 function ProductVisual({ product }: { product: Product }) {
   if (product.image) {
     return (
       <div className="product-visual relative flex h-[206px] items-center justify-center overflow-hidden rounded-[14px] sm:h-[220px] bg-[#171411]">
-        <img 
+        <LazyImage 
           src={product.image} 
           alt={product.name} 
+          containerClassName="h-full w-full"
           className="h-full w-full object-cover transition-transform duration-300 hover:scale-105" 
         />
         <span className="shine" />
@@ -73,6 +71,7 @@ function ProductVisual({ product }: { product: Product }) {
     </div>
   );
 }
+
 
 function ProductCard({ product, favorite, onFavorite, onAdd }: { product: Product; favorite: boolean; onFavorite: () => void; onAdd: () => void }) {
   return (
@@ -181,41 +180,42 @@ import {
 } from '@/lib/supabase';
 
 export function App() {
-  const [productList, setProductList] = useState<Product[]>(() => {
-    try {
-      const saved = localStorage.getItem('lucca_cell_products');
-      return saved ? JSON.parse(saved) : INITIAL_PRODUCTS;
-    } catch {
-      return INITIAL_PRODUCTS;
-    }
-  });
+  const [productList, setProductList] = useState<Product[]>([]);
 
-  // Tenta carregar os dados reais do Supabase na inicialização
+  const categories = useMemo(() => {
+    return categoryDefinitions.map(def => {
+      if (def.name === 'Todos') {
+        return { ...def, count: productList.length > 0 ? String(productList.length).padStart(2, '0') : undefined };
+      }
+      const count = productList.filter(p => p.category === def.name).length;
+      return { ...def, count: count > 0 ? String(count).padStart(2, '0') : undefined };
+    });
+  }, [productList]);
+
+  // Carrega os dados reais do Supabase na inicialização
   useEffect(() => {
     async function loadSupabaseData() {
       const dbProducts = await fetchProductsFromSupabase();
-      if (dbProducts && dbProducts.length > 0) {
-        setProductList(dbProducts);
-      } else {
-        // Primeira sincronização com o banco
-        syncProductsToSupabase(productList);
-      }
+      setProductList(dbProducts);
     }
     loadSupabaseData();
   }, []);
 
-  useEffect(() => {
-    try {
-      localStorage.setItem('lucca_cell_products', JSON.stringify(productList));
-    } catch (e) {
-      console.error(e);
-    }
-  }, [productList]);
-
-  // Admin state
+  // Admin state & RBAC
   const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false);
   const [isAdminLoginModalOpen, setIsAdminLoginModalOpen] = useState(false);
   const [showAdminPanel, setShowAdminPanel] = useState(false);
+  const [currentAdminUser, setCurrentAdminUser] = useState<AdminProfile | null>(null);
+
+  // Restaurar sessão do Supabase ao carregar
+  useEffect(() => {
+    getSupabaseUser().then(profile => {
+      if (profile) {
+        setCurrentAdminUser(profile);
+        setIsAdminLoggedIn(true);
+      }
+    });
+  }, []);
 
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState<Category>('Todos');
@@ -270,34 +270,35 @@ export function App() {
     };
     const updated = [fullProduct, ...productList];
     setProductList(updated);
-    const synced = await syncProductsToSupabase(updated);
+    const synced = await syncProductsToSupabase([fullProduct]);
     if (synced) {
-      showToast(`Produto "${fullProduct.name}" cadastrado e sincronizado na nuvem! ✨`);
+      showToast(`Produto "${fullProduct.name}" cadastrado e salvo no banco! ✨`);
     } else {
-      showToast(`Produto "${fullProduct.name}" cadastrado localmente! (Execute o SQL no Supabase para sincronizar)`);
+      showToast(`Produto "${fullProduct.name}" cadastrado!`);
     }
   };
 
   const handleEditProduct = async (updatedProd: Product) => {
     const updated = productList.map(p => p.id === updatedProd.id ? updatedProd : p);
     setProductList(updated);
-    const synced = await syncProductsToSupabase(updated);
+    const synced = await syncProductsToSupabase([updatedProd]);
     if (synced) {
-      showToast(`Produto "${updatedProd.name}" atualizado e sincronizado na nuvem! ✨`);
+      showToast(`Produto "${updatedProd.name}" atualizado no banco! ✨`);
     } else {
-      showToast(`Produto "${updatedProd.name}" atualizado localmente!`);
+      showToast(`Produto "${updatedProd.name}" atualizado!`);
     }
   };
 
   const handleDeleteProduct = async (id: number) => {
+    const previous = [...productList];
     const updated = productList.filter(p => p.id !== id);
     setProductList(updated);
     const deleted = await deleteProductFromSupabase(id);
-    await syncProductsToSupabase(updated);
     if (deleted) {
-      showToast('Produto removido do catálogo e da nuvem');
+      showToast('Produto excluído com sucesso do banco de dados!');
     } else {
-      showToast('Produto removido localmente');
+      setProductList(previous);
+      showToast('Falha ao excluir produto no banco.');
     }
   };
 
@@ -320,13 +321,21 @@ export function App() {
       />
 
       {/* Render Admin Panel or Public Catalog */}
-      {showAdminPanel && isAdminLoggedIn ? (
+      {showAdminPanel && isAdminLoggedIn && currentAdminUser ? (
         <AdminPanel
           products={productList}
+          currentUser={currentAdminUser}
           onAddProduct={handleAddProduct}
           onEditProduct={handleEditProduct}
           onDeleteProduct={handleDeleteProduct}
           onCloseAdmin={() => setShowAdminPanel(false)}
+          onLogout={async () => {
+            await signOutAdminFromSupabase();
+            setIsAdminLoggedIn(false);
+            setCurrentAdminUser(null);
+            setShowAdminPanel(false);
+            showToast('Sessão encerrada com sucesso');
+          }}
         />
       ) : (
         <main>
@@ -389,14 +398,16 @@ export function App() {
       {toast && <div role="status" data-testid="status-toast" className="toast-pop fixed bottom-5 left-1/2 z-[60] flex -translate-x-1/2 items-center gap-2 rounded-full bg-[#211b17] px-4 py-3 text-xs font-bold text-[#fff7e6] shadow-[0_10px_25px_rgba(41,25,8,.24)]"><Check size={15} className="text-[#f3bd3c]" /> {toast}</div>}
       <CartDrawer open={cartOpen} lines={lines} onClose={() => setCartOpen(false)} onQuantity={changeQuantity} onRemove={removeLine} />
 
-      {/* Admin Login Modal */}
-      <AdminLoginModal
+      {/* Admin Auth Modal (Login + Criar Conta) */}
+      <AdminAuthModal
         isOpen={isAdminLoginModalOpen}
         onClose={() => setIsAdminLoginModalOpen(false)}
-        onLoginSuccess={() => {
+        onLoginSuccess={(profile) => {
+          setCurrentAdminUser(profile);
           setIsAdminLoggedIn(true);
           setIsAdminLoginModalOpen(false);
           setShowAdminPanel(true);
+          showToast(`Bem-vindo, ${profile.name.split(' ')[0]} (${profile.role.toUpperCase()})!`);
         }}
       />
     </div>

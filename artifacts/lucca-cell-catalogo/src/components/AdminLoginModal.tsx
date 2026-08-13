@@ -13,9 +13,11 @@ export function AdminLoginModal({ isOpen, onClose, onLoginSuccess }: AdminLoginM
 
   if (!isOpen) return null;
 
+  const validAdminPassword = import.meta.env.VITE_ADMIN_PASSWORD || 'luccacell2026';
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (password === 'admin' || password === '123456' || password === 'luccacell') {
+    if (password.trim() === validAdminPassword) {
       setError(false);
       setPassword('');
       onLoginSuccess();
@@ -79,7 +81,7 @@ export function AdminLoginModal({ isOpen, onClose, onLoginSuccess }: AdminLoginM
                       setPassword(e.target.value);
                       if (error) setError(false);
                     }}
-                    placeholder="Digite a senha (ex: admin)"
+                    placeholder="Digite a senha de acesso"
                     autoFocus
                     className={`h-11 w-full rounded-xl border bg-[#171411] pl-10 pr-4 text-xs text-[#fff4dc] placeholder:text-[#6e6153] outline-none transition-colors ${
                       error 
@@ -91,7 +93,7 @@ export function AdminLoginModal({ isOpen, onClose, onLoginSuccess }: AdminLoginM
                 {error && (
                   <div className="mt-2 flex items-center gap-1.5 text-xs text-red-400 font-medium">
                     <AlertCircle size={14} />
-                    <span>Senha incorreta. Tente 'admin'.</span>
+                    <span>Senha incorreta. Verifique os dados digitados.</span>
                   </div>
                 )}
               </div>

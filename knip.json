@@ -1,0 +1,14 @@
+{
+  "$schema": "https://unpkg.com/knip@5/schema.json",
+  "entry": [
+    "artifacts/lucca-cell-catalogo/src/main.tsx",
+    "artifacts/api-server/src/index.ts"
+  ],
+  "project": [
+    "artifacts/**/*.{ts,tsx,js,jsx}"
+  ],
+  "ignoreDependencies": [
+    "@replit/*",
+    "tw-animate-css"
+  ]
+}
