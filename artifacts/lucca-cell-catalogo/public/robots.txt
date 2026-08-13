@@ -1,2 +1,7 @@
 User-agent: *
 Allow: /
+
+Disallow: /admin
+Disallow: /api/
+
+Sitemap: https://luccacell.com.br/sitemap.xml

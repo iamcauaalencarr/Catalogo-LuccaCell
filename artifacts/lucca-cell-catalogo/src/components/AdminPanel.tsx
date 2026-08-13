@@ -285,146 +285,128 @@ export function AdminPanel({
   const featuredCount = products.filter(p => Boolean(p.tag)).length;
 
   return (
-    <div className="min-h-screen bg-[#f4efe5] text-[#241c16] pb-24">
+    <div className="min-h-screen bg-[#FAF7F2] text-[#1E1D1B] pb-24">
       
       {/* Top Admin Header Bar */}
-      <div className="border-b border-[#2b241e] bg-[#171411] text-[#fff8e8] sticky top-0 z-30 shadow-md">
-        <div className="gold-line h-1 w-full" />
-        <div className="container-lucca py-3 sm:py-0 sm:h-[76px] flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+      <div className="border-b border-[#E7E0D6] bg-[#FFFFFF] text-[#1E1D1B] sticky top-0 z-30 shadow-2xs">
+        <div className="gold-line h-0.5 w-full" />
+        <div className="container-lucca py-3 sm:py-0 sm:h-[72px] flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
           
           {/* Header Title & Status */}
           <div className="flex items-center justify-between sm:justify-start gap-3">
             <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-[#f4b52e]/20 text-[#f4b52e] border border-[#f4b52e]/40 shrink-0">
-                {isOwner ? <Crown size={20} className="text-[#f4b52e]" /> : <ShieldCheck size={20} className="text-[#f4b52e]" />}
+              <div className="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-[#FDF2EC] text-[#D97757] border border-[#F3D7C9] shrink-0">
+                {isOwner ? <Crown size={19} className="text-[#D97757]" /> : <ShieldCheck size={19} className="text-[#D97757]" />}
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <span className="font-extrabold text-xs sm:text-base tracking-tight text-[#fff8e8] font-['Outfit']">
-                    PAINEL ADMIN
-                  </span>
-                  <span className={`text-[9px] sm:text-[10px] font-extrabold px-2 py-0.5 rounded-full uppercase tracking-wider ${
-                    isOwner ? 'bg-[#f4b52e] text-[#211b17]' : 'bg-[#3e3226] text-[#f4b52e] border border-[#67502d]'
+                  <h1 className="display text-base sm:text-lg font-bold text-[#1E1D1B]">Painel Administrativo</h1>
+                  <span className={`text-[9px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-full ${
+                    isOwner ? 'bg-[#D97757] text-[#FFFFFF]' : 'bg-[#FAF4ED] text-[#B05330] border border-[#F0E4D5]'
                   }`}>
-                    {isOwner ? '👑 OWNER' : '🛡️ ADMIN'}
+                    {currentUser.role}
                   </span>
                 </div>
-                <p className="text-[10px] sm:text-[11px] text-[#bcae98] line-clamp-1">
-                  {currentUser.name} ({currentUser.email})
+                <p className="text-[10px] text-[#736B60] flex items-center gap-1.5">
+                  <span>{currentUser.name}</span>
+                  <span className="opacity-40">·</span>
+                  <span className="text-[#B05330]">{currentUser.email}</span>
                 </p>
               </div>
             </div>
 
-            {/* Back Button (Mobile top-right) */}
-            <div className="flex items-center gap-1 sm:hidden">
-              {onLogout && (
-                <button
-                  onClick={onLogout}
-                  className="flex items-center justify-center h-9 w-9 rounded-full border border-red-500/40 text-red-300 hover:bg-red-500/20 shrink-0"
-                  title="Sair"
-                >
-                  <LogOut size={15} />
-                </button>
-              )}
-              <button
-                onClick={onCloseAdmin}
-                className="flex items-center justify-center h-9 w-9 rounded-full border border-[#69543c] text-[#e8d9bf] hover:bg-[#2b241e] shrink-0"
-                title="Voltar ao Site"
-              >
-                <ArrowLeft size={16} />
-              </button>
-            </div>
+            {/* Close button on mobile */}
+            <button
+              onClick={onCloseAdmin}
+              className="sm:hidden flex items-center justify-center h-8 w-8 rounded-full border border-[#E0D8CC] text-[#6E675D] hover:bg-[#F7F3EC]"
+            >
+              <X size={16} />
+            </button>
           </div>
 
-          {/* Action Buttons Grid */}
-          <div className="flex items-center gap-2 w-full sm:w-auto">
+          {/* Action Buttons */}
+          <div className="flex items-center gap-2">
             {canCreate && (
               <>
                 <button
                   onClick={() => setIsAIModalOpen(true)}
-                  className="flex-1 sm:flex-none flex h-11 sm:h-10 items-center justify-center gap-2 rounded-full border border-[#f4b52e]/80 bg-[#2b231c] px-3.5 sm:px-4 text-xs font-extrabold text-[#f4b52e] active:scale-95 transition-all shadow-sm"
-                  title="Cadastrar produto automaticamente enviando uma foto"
+                  className="flex-1 sm:flex-none flex h-9 items-center justify-center gap-2 rounded-full border border-[#F0D5C7] bg-[#FAF5EF] px-3.5 sm:px-4 text-xs font-bold text-[#B05330] active:scale-95 transition-all shadow-2xs hover:border-[#D97757]"
                 >
-                  <Sparkles size={16} />
-                  <span className="truncate">Com IA</span>
+                  <Sparkles size={14} className="text-[#D97757]" />
+                  <span>Cadastrar via IA</span>
                 </button>
-
                 <button
                   onClick={openNewProductForm}
-                  className="flex-1 sm:flex-none flex h-11 sm:h-10 items-center justify-center gap-2 rounded-full bg-[#f4b52e] px-3.5 sm:px-4 text-xs font-extrabold text-[#261c14] active:scale-95 transition-all shadow-sm"
+                  className="flex-1 sm:flex-none flex h-9 items-center justify-center gap-2 rounded-full bg-[#D97757] px-3.5 sm:px-4 text-xs font-bold text-[#FFFFFF] active:scale-95 transition-all shadow-xs hover:bg-[#C85A32]"
                 >
-                  <Plus size={16} />
-                  <span className="truncate">Novo Produto</span>
+                  <Plus size={15} />
+                  <span>Novo Produto</span>
                 </button>
               </>
             )}
 
-            {/* Logout & Back Buttons (Desktop) */}
             {onLogout && (
               <button
                 onClick={onLogout}
-                className="hidden sm:flex items-center gap-1.5 h-10 rounded-full border border-red-500/30 px-3.5 text-xs font-bold text-red-300 hover:bg-red-500/20 transition-colors shrink-0"
+                className="flex items-center justify-center h-9 w-9 rounded-full border border-[#E0D8CC] text-[#6E675D] hover:text-[#D93838] hover:bg-[#F7F3EC] shrink-0 transition-colors"
                 title="Encerrar Sessão"
               >
-                <LogOut size={14} />
-                <span>Sair</span>
+                <LogOut size={15} />
               </button>
             )}
 
             <button
               onClick={onCloseAdmin}
-              className="hidden sm:flex items-center gap-1.5 h-10 rounded-full border border-[#69543c] px-4 text-xs font-bold text-[#e8d9bf] hover:bg-[#2b241e] transition-colors shrink-0"
+              className="hidden sm:flex items-center gap-1.5 h-9 rounded-full border border-[#E0D8CC] px-3.5 text-xs font-bold text-[#4A443B] hover:bg-[#F7F3EC] transition-colors shrink-0"
             >
               <ArrowLeft size={14} />
-              <span>Voltar ao Site</span>
+              <span>Voltar ao Catálogo</span>
             </button>
           </div>
-
         </div>
 
-        {/* OWNER NAVIGATION TABS */}
-        {isOwner && (
-          <div className="container-lucca flex items-center gap-2 border-t border-[#2d251f] pt-2 pb-2 overflow-x-auto">
-            <button
-              type="button"
-              onClick={() => setActiveSection('products')}
-              className={`flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-bold transition-all whitespace-nowrap ${
-                activeSection === 'products'
-                  ? 'bg-[#f4b52e] text-[#211b17]'
-                  : 'text-[#bcae98] hover:text-white hover:bg-[#2b241e]'
-              }`}
-            >
-              <Package size={14} />
-              <span>Produtos & Catálogo</span>
-            </button>
+        {/* Tab Navigation */}
+        <div className="container-lucca flex gap-2 border-t border-[#E7E0D6] pt-2 pb-2 overflow-x-auto">
+          <button
+            onClick={() => setActiveSection('products')}
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+              activeSection === 'products'
+                ? 'bg-[#D97757] text-[#FFFFFF]'
+                : 'text-[#6E675D] hover:text-[#1E1D1B] hover:bg-[#FAF6F0]'
+            }`}
+          >
+            <Package size={14} />
+            <span>Produtos ({products.length})</span>
+          </button>
 
-            <button
-              type="button"
-              onClick={() => setActiveSection('team')}
-              className={`flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-bold transition-all whitespace-nowrap ${
-                activeSection === 'team'
-                  ? 'bg-[#f4b52e] text-[#211b17]'
-                  : 'text-[#bcae98] hover:text-white hover:bg-[#2b241e]'
-              }`}
-            >
-              <Users size={14} />
-              <span>Equipe & Convites (Owner)</span>
-            </button>
+          {isOwner && (
+            <>
+              <button
+                onClick={() => setActiveSection('team')}
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                  activeSection === 'team'
+                    ? 'bg-[#D97757] text-[#FFFFFF]'
+                    : 'text-[#6E675D] hover:text-[#1E1D1B] hover:bg-[#FAF6F0]'
+                }`}
+              >
+                <Users size={14} />
+                <span>Equipe & Acessos</span>
+              </button>
 
-            <button
-              type="button"
-              onClick={() => setActiveSection('audit')}
-              className={`flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-bold transition-all whitespace-nowrap ${
-                activeSection === 'audit'
-                  ? 'bg-[#f4b52e] text-[#211b17]'
-                  : 'text-[#bcae98] hover:text-white hover:bg-[#2b241e]'
-              }`}
-            >
-              <History size={14} />
-              <span>Logs de Auditoria</span>
-            </button>
-          </div>
-        )}
+              <button
+                onClick={() => setActiveSection('audit')}
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                  activeSection === 'audit'
+                    ? 'bg-[#D97757] text-[#FFFFFF]'
+                    : 'text-[#6E675D] hover:text-[#1E1D1B] hover:bg-[#FAF6F0]'
+                }`}
+              >
+                <History size={14} />
+                <span>Auditoria de Logs</span>
+              </button>
+            </>
+          )}
+        </div>
       </div>
 
       {/* ========================================================================= */}
@@ -435,42 +417,42 @@ export function AdminPanel({
           
           {/* KPI Dashboard Cards */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-            <div className="rounded-[16px] sm:rounded-[18px] border border-[#dfd5c5] bg-[#fbf8f0] p-3.5 sm:p-5 shadow-xs">
-              <div className="flex items-center justify-between text-[#887864] mb-1 sm:mb-2">
+            <div className="rounded-[16px] sm:rounded-[18px] border border-[#E7E0D6] bg-[#FFFFFF] p-3.5 sm:p-5 shadow-xs">
+              <div className="flex items-center justify-between text-[#6E675D] mb-1 sm:mb-2">
                 <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider line-clamp-1">Produtos</span>
-                <Package size={18} className="text-[#d97621] shrink-0" />
+                <Package size={18} className="text-[#D97757] shrink-0" />
               </div>
-              <div className="text-xl sm:text-3xl font-extrabold text-[#2c2118]">{products.length}</div>
-              <span className="text-[10px] sm:text-[11px] text-[#7a6b5a] mt-0.5 sm:mt-1 block line-clamp-1">Cadastrados no catálogo</span>
+              <div className="text-xl sm:text-3xl font-extrabold text-[#1E1D1B]">{products.length}</div>
+              <span className="text-[10px] sm:text-[11px] text-[#736B60] mt-0.5 sm:mt-1 block line-clamp-1">Cadastrados no catálogo</span>
             </div>
 
-            <div className="rounded-[16px] sm:rounded-[18px] border border-[#dfd5c5] bg-[#fbf8f0] p-3.5 sm:p-5 shadow-xs">
-              <div className="flex items-center justify-between text-[#887864] mb-1 sm:mb-2">
+            <div className="rounded-[16px] sm:rounded-[18px] border border-[#E7E0D6] bg-[#FFFFFF] p-3.5 sm:p-5 shadow-xs">
+              <div className="flex items-center justify-between text-[#6E675D] mb-1 sm:mb-2">
                 <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider line-clamp-1">Estoque Total</span>
-                <DollarSign size={18} className="text-[#2b8a3e] shrink-0" />
+                <DollarSign size={18} className="text-[#2E7D32] shrink-0" />
               </div>
-              <div className="text-xl sm:text-3xl font-extrabold text-[#2c2118] truncate">
+              <div className="text-xl sm:text-3xl font-extrabold text-[#1E1D1B] truncate">
                 {totalValue.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
               </div>
-              <span className="text-[10px] sm:text-[11px] text-[#7a6b5a] mt-0.5 sm:mt-1 block line-clamp-1">Soma dos itens</span>
+              <span className="text-[10px] sm:text-[11px] text-[#736B60] mt-0.5 sm:mt-1 block line-clamp-1">Soma dos itens</span>
             </div>
 
-            <div className="rounded-[16px] sm:rounded-[18px] border border-[#dfd5c5] bg-[#fbf8f0] p-3.5 sm:p-5 shadow-xs">
-              <div className="flex items-center justify-between text-[#887864] mb-1 sm:mb-2">
+            <div className="rounded-[16px] sm:rounded-[18px] border border-[#E7E0D6] bg-[#FFFFFF] p-3.5 sm:p-5 shadow-xs">
+              <div className="flex items-center justify-between text-[#6E675D] mb-1 sm:mb-2">
                 <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider line-clamp-1">Destaques</span>
-                <Tag size={18} className="text-[#f4b52e] shrink-0" />
+                <Tag size={18} className="text-[#D48825] shrink-0" />
               </div>
-              <div className="text-xl sm:text-3xl font-extrabold text-[#2c2118]">{featuredCount}</div>
-              <span className="text-[10px] sm:text-[11px] text-[#7a6b5a] mt-0.5 sm:mt-1 block line-clamp-1">Com selo especial</span>
+              <div className="text-xl sm:text-3xl font-extrabold text-[#1E1D1B]">{featuredCount}</div>
+              <span className="text-[10px] sm:text-[11px] text-[#736B60] mt-0.5 sm:mt-1 block line-clamp-1">Com selo especial</span>
             </div>
 
-            <div className="rounded-[16px] sm:rounded-[18px] border border-[#dfd5c5] bg-[#fbf8f0] p-3.5 sm:p-5 shadow-xs">
-              <div className="flex items-center justify-between text-[#887864] mb-1 sm:mb-2">
+            <div className="rounded-[16px] sm:rounded-[18px] border border-[#E7E0D6] bg-[#FFFFFF] p-3.5 sm:p-5 shadow-xs">
+              <div className="flex items-center justify-between text-[#6E675D] mb-1 sm:mb-2">
                 <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider line-clamp-1">Seu Perfil</span>
-                <ShieldCheck size={18} className="text-[#d7ad55] shrink-0" />
+                <ShieldCheck size={18} className="text-[#D97757] shrink-0" />
               </div>
-              <div className="text-base sm:text-xl font-extrabold text-[#2c2118] truncate">{currentUser.role.toUpperCase()}</div>
-              <span className="text-[10px] sm:text-[11px] text-[#7a6b5a] mt-0.5 sm:mt-1 block line-clamp-1">
+              <div className="text-base sm:text-xl font-extrabold text-[#1E1D1B] truncate">{currentUser.role.toUpperCase()}</div>
+              <span className="text-[10px] sm:text-[11px] text-[#736B60] mt-0.5 sm:mt-1 block line-clamp-1">
                 {isOwner ? 'Acesso Irrestrito' : `${currentUser.permissions.length} permissões ativas`}
               </span>
             </div>
@@ -479,13 +461,13 @@ export function AdminPanel({
           {/* Filtros e Busca */}
           <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-between">
             <div className="relative flex-1 max-w-md">
-              <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#887864]" />
+              <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#8E8578]" />
               <input
                 type="text"
                 value={search}
                 onChange={e => setSearch(e.target.value)}
                 placeholder="Buscar por nome ou descrição..."
-                className="h-11 w-full rounded-full border border-[#ded2c0] bg-[#fbf8f0] pl-10 pr-4 text-xs text-[#241c16] placeholder:text-[#887864] outline-none focus:border-[#f4b52e]"
+                className="h-11 w-full rounded-full border border-[#DED6CA] bg-[#FFFFFF] pl-10 pr-4 text-xs text-[#1E1D1B] placeholder:text-[#8E8578] outline-none focus:border-[#D97757] shadow-2xs"
               />
             </div>
 
@@ -496,8 +478,8 @@ export function AdminPanel({
                   onClick={() => setSelectedCategory(cat)}
                   className={`h-9 px-3.5 rounded-full text-xs font-bold whitespace-nowrap transition-all ${
                     selectedCategory === cat 
-                      ? 'bg-[#211b17] text-[#f4b52e] shadow-xs' 
-                      : 'bg-[#ede5d5] text-[#695a48] hover:bg-[#dfd5c2]'
+                      ? 'bg-[#D97757] text-[#FFFFFF] shadow-xs' 
+                      : 'bg-[#FFFFFF] text-[#5C554B] border border-[#E0D8CC] hover:bg-[#FAF6F0] hover:text-[#1E1D1B]'
                   }`}
                 >
                   {cat}
@@ -507,10 +489,10 @@ export function AdminPanel({
           </div>
 
           {/* Tabela de Produtos */}
-          <div className="rounded-2xl border border-[#ded2c0] bg-[#fbf8f0] overflow-hidden shadow-sm">
+          <div className="rounded-2xl border border-[#E7E0D6] bg-[#FFFFFF] overflow-hidden shadow-xs">
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs text-[#241c16]">
-                <thead className="border-b border-[#ded2c0] bg-[#ede5d5] font-bold text-[#695a48] uppercase text-[10px] tracking-wider">
+              <table className="w-full text-left text-xs text-[#1E1D1B]">
+                <thead className="border-b border-[#E7E0D6] bg-[#FAF8F5] font-bold text-[#6E675D] uppercase text-[10px] tracking-wider">
                   <tr>
                     <th className="p-3.5 sm:p-4">Produto</th>
                     <th className="p-3.5 sm:p-4">Categoria</th>
@@ -519,40 +501,40 @@ export function AdminPanel({
                     <th className="p-3.5 sm:p-4 text-right">Ações</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-[#ded2c0]">
+                <tbody className="divide-y divide-[#F0EAE0]">
                   {filtered.length === 0 ? (
                     <tr>
-                      <td colSpan={5} className="p-8 text-center text-[#887864]">
+                      <td colSpan={5} className="p-8 text-center text-[#8E8578]">
                         Nenhum produto encontrado com os filtros atuais.
                       </td>
                     </tr>
                   ) : (
                     filtered.map(product => (
-                      <tr key={product.id} className="hover:bg-[#f4efe5] transition-colors">
+                      <tr key={product.id} className="hover:bg-[#FAF9F6] transition-colors">
                         <td className="p-3.5 sm:p-4 font-bold flex items-center gap-3">
                           {product.image ? (
-                            <img src={product.image} alt={product.name} className="h-9 w-9 rounded-lg object-cover border border-[#ded2c0]" />
+                            <img src={product.image} alt={product.name} className="h-9 w-9 rounded-lg object-cover border border-[#EAE3D8]" />
                           ) : (
-                            <div className="h-9 w-9 rounded-lg bg-[#211b17] text-[#f4b52e] flex items-center justify-center font-bold text-xs">
+                            <div className="h-9 w-9 rounded-lg bg-[#FAF4EC] text-[#D97757] flex items-center justify-center font-bold text-xs">
                               {product.name.charAt(0)}
                             </div>
                           )}
                           <div className="truncate max-w-[200px] sm:max-w-xs">
-                            <span className="block truncate text-xs sm:text-sm">{product.name}</span>
-                            <span className="block text-[10px] text-[#887864] font-normal truncate">{product.description}</span>
+                            <span className="block truncate text-xs sm:text-sm text-[#1E1D1B]">{product.name}</span>
+                            <span className="block text-[10px] text-[#736B60] font-normal truncate">{product.description}</span>
                           </div>
                         </td>
-                        <td className="p-3.5 sm:p-4 text-[#695a48] font-medium">{product.category}</td>
-                        <td className="p-3.5 sm:p-4 font-bold text-[#211b17]">
+                        <td className="p-3.5 sm:p-4 text-[#4A443B] font-medium">{product.category}</td>
+                        <td className="p-3.5 sm:p-4 font-bold text-[#1E1D1B]">
                           {product.price.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                         </td>
                         <td className="p-3.5 sm:p-4">
                           {product.tag ? (
-                            <span className="bg-[#f4b52e]/30 text-[#8f6412] px-2 py-0.5 rounded-full text-[10px] font-bold">
+                            <span className="bg-[#FAF2EB] border border-[#F0D5C7] text-[#B8522E] px-2 py-0.5 rounded-full text-[10px] font-bold">
                               {product.tag}
                             </span>
                           ) : (
-                            <span className="text-[#a49683] text-[10px]">-</span>
+                            <span className="text-[#948A7D] text-[10px]">-</span>
                           )}
                         </td>
                         <td className="p-3.5 sm:p-4 text-right">
@@ -560,7 +542,7 @@ export function AdminPanel({
                             {canUpdate && (
                               <button
                                 onClick={() => openEditProductForm(product)}
-                                className="flex h-8 w-8 items-center justify-center rounded-full bg-[#ede5d5] text-[#211b17] hover:bg-[#f4b52e] transition-colors"
+                                className="flex h-8 w-8 items-center justify-center rounded-full bg-[#FAF4ED] text-[#B05330] hover:bg-[#D97757] hover:text-[#FFFFFF] transition-colors shadow-2xs"
                                 title="Editar Produto"
                               >
                                 <Edit size={14} />
@@ -574,7 +556,7 @@ export function AdminPanel({
                                     onDeleteProduct(product.id);
                                   }
                                 }}
-                                className="flex h-8 w-8 items-center justify-center rounded-full bg-red-100 text-red-600 hover:bg-red-200 transition-colors"
+                                className="flex h-8 w-8 items-center justify-center rounded-full bg-red-50 border border-red-200 text-red-600 hover:bg-red-100 transition-colors"
                                 title="Excluir Produto"
                               >
                                 <Trash2 size={14} />
@@ -603,27 +585,27 @@ export function AdminPanel({
         <div className="container-lucca pt-4 sm:pt-8 space-y-6 sm:space-y-8 animate-rise">
           
           {/* Card: Convidar Novo Administrador */}
-          <div className="rounded-2xl border border-[#ded2c0] bg-[#fbf8f0] p-5 sm:p-6 shadow-sm">
+          <div className="rounded-2xl border border-[#E7E0D6] bg-[#FFFFFF] p-5 sm:p-6 shadow-xs">
             <div className="flex items-center gap-3 mb-4">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#f4b52e]/20 text-[#f4b52e] border border-[#f4b52e]/40">
-                <Send size={20} />
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#FAF2EB] text-[#D97757] border border-[#F0D5C7]">
+                <Send size={18} />
               </div>
               <div>
-                <h3 className="font-extrabold text-sm sm:text-base text-[#211b17]">Convidar Novo Administrador</h3>
-                <p className="text-xs text-[#887864]">Gere um convite com permissões granulares no banco de dados.</p>
+                <h3 className="font-extrabold text-sm sm:text-base text-[#1E1D1B]">Convidar Novo Administrador</h3>
+                <p className="text-xs text-[#736B60]">Gere um convite com permissões granulares no banco de dados.</p>
               </div>
             </div>
 
             <form onSubmit={handleSendInvite} className="space-y-4">
               {inviteError && (
-                <div className="rounded-xl border border-red-500/40 bg-red-500/10 p-3 text-xs text-red-700 flex items-start gap-2">
+                <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-xs text-red-600 flex items-start gap-2">
                   <AlertTriangle size={16} className="shrink-0 mt-0.5" />
                   <span>{inviteError}</span>
                 </div>
               )}
 
               {inviteSuccess && (
-                <div className="rounded-xl border border-emerald-500/40 bg-emerald-500/10 p-3 text-xs text-emerald-800 flex items-start gap-2">
+                <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-xs text-emerald-700 flex items-start gap-2">
                   <CheckCircle2 size={16} className="shrink-0 mt-0.5 text-emerald-600" />
                   <span>{inviteSuccess}</span>
                 </div>
@@ -631,7 +613,7 @@ export function AdminPanel({
 
               <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-3 items-end">
                 <div>
-                  <label className="block text-[11px] font-bold uppercase tracking-[.1em] text-[#695a48] mb-1.5">
+                  <label className="block text-[11px] font-bold uppercase tracking-[.1em] text-[#6E675D] mb-1.5">
                     E-mail do Novo Administrador *
                   </label>
                   <input
@@ -640,23 +622,23 @@ export function AdminPanel({
                     value={inviteEmail}
                     onChange={e => setInviteEmail(e.target.value)}
                     placeholder="novo.admin@luccacell.com.br"
-                    className="h-11 w-full rounded-xl border border-[#ded2c0] bg-white px-4 text-xs text-[#211b17] outline-none focus:border-[#f4b52e]"
+                    className="h-11 w-full rounded-xl border border-[#DED6CA] bg-[#FFFFFF] px-4 text-xs text-[#1E1D1B] placeholder:text-[#8E8578] outline-none focus:border-[#D97757] shadow-2xs"
                   />
                 </div>
 
                 <button
                   type="submit"
                   disabled={isInviting}
-                  className="h-11 flex items-center justify-center gap-2 rounded-xl bg-[#211b17] px-6 text-xs font-extrabold text-[#f4b52e] hover:bg-[#382e26] transition-colors disabled:opacity-50"
+                  className="h-11 flex items-center justify-center gap-2 rounded-xl bg-[#D97757] px-6 text-xs font-bold text-[#FFFFFF] hover:bg-[#C85A32] transition-colors disabled:opacity-50 shadow-xs"
                 >
-                  <Send size={15} />
+                  <Send size={14} />
                   <span>{isInviting ? 'Gerando...' : 'Criar Convite'}</span>
                 </button>
               </div>
 
               {/* Permissões Granulares Checkboxes */}
               <div>
-                <label className="block text-[11px] font-bold uppercase tracking-[.1em] text-[#695a48] mb-2">
+                <label className="block text-[11px] font-bold uppercase tracking-[.1em] text-[#6E675D] mb-2">
                   Permissões Concedidas a Este Administrador:
                 </label>
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2.5">
@@ -670,15 +652,15 @@ export function AdminPanel({
                       key={perm.id} 
                       className={`flex items-center gap-2.5 p-2.5 rounded-xl border cursor-pointer text-xs transition-colors ${
                         invitePermissions.includes(perm.id as PermissionType)
-                          ? 'bg-[#f4b52e]/20 border-[#f4b52e] text-[#211b17] font-bold'
-                          : 'bg-white border-[#ded2c0] text-[#695a48]'
+                          ? 'bg-[#FAF2EB] border-[#D97757] text-[#B05330] font-bold'
+                          : 'bg-[#FFFFFF] border-[#E7E0D6] text-[#6E675D]'
                       }`}
                     >
                       <input
                         type="checkbox"
                         checked={invitePermissions.includes(perm.id as PermissionType)}
                         onChange={() => togglePermissionSelection(perm.id as PermissionType)}
-                        className="rounded accent-[#f4b52e]"
+                        className="rounded accent-[#D97757]"
                       />
                       <span>{perm.label}</span>
                     </label>
@@ -689,19 +671,19 @@ export function AdminPanel({
           </div>
 
           {/* Lista de Administradores Ativos */}
-          <div className="rounded-2xl border border-[#ded2c0] bg-[#fbf8f0] overflow-hidden shadow-sm">
-            <div className="p-4 border-b border-[#ded2c0] bg-[#ede5d5] flex items-center justify-between">
-              <h4 className="font-extrabold text-xs uppercase tracking-wider text-[#695a48]">
+          <div className="rounded-2xl border border-[#E7E0D6] bg-[#FFFFFF] overflow-hidden shadow-xs">
+            <div className="p-4 border-b border-[#E7E0D6] bg-[#FAF8F5] flex items-center justify-between">
+              <h4 className="font-extrabold text-xs uppercase tracking-wider text-[#6E675D]">
                 Administradores Cadastrados ({adminList.length})
               </h4>
-              <button onClick={loadTeamData} className="text-xs text-[#8f6412] font-bold hover:underline">
+              <button onClick={loadTeamData} className="text-xs text-[#B05330] font-bold hover:underline">
                 Atualizar Lista
               </button>
             </div>
 
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs text-[#241c16]">
-                <thead className="border-b border-[#ded2c0] bg-[#f4efe5] text-[#887864] text-[10px] uppercase font-bold">
+              <table className="w-full text-left text-xs text-[#1E1D1B]">
+                <thead className="border-b border-[#E7E0D6] bg-[#FFFFFF] text-[#736B60] text-[10px] uppercase font-bold">
                   <tr>
                     <th className="p-3.5">Nome / E-mail</th>
                     <th className="p-3.5">Papel</th>
@@ -710,36 +692,36 @@ export function AdminPanel({
                     <th className="p-3.5 text-right">Ação</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-[#ded2c0]">
+                <tbody className="divide-y divide-[#F0EAE0]">
                   {loadingTeam ? (
                     <tr>
-                      <td colSpan={5} className="p-6 text-center text-[#887864]">Carregando equipe...</td>
+                      <td colSpan={5} className="p-6 text-center text-[#8E8578]">Carregando equipe...</td>
                     </tr>
                   ) : adminList.length === 0 ? (
                     <tr>
-                      <td colSpan={5} className="p-6 text-center text-[#887864]">Nenhum administrador cadastrado.</td>
+                      <td colSpan={5} className="p-6 text-center text-[#8E8578]">Nenhum administrador cadastrado.</td>
                     </tr>
                   ) : (
                     adminList.map(admin => (
-                      <tr key={admin.id} className="hover:bg-[#f4efe5]">
+                      <tr key={admin.id} className="hover:bg-[#FAF9F6]">
                         <td className="p-3.5 font-bold">
-                          <div>{admin.name}</div>
-                          <div className="text-[10px] text-[#887864] font-normal">{admin.email}</div>
+                          <div className="text-[#1E1D1B]">{admin.name}</div>
+                          <div className="text-[10px] text-[#736B60] font-normal">{admin.email}</div>
                         </td>
                         <td className="p-3.5">
                           <span className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase ${
-                            admin.role === 'owner' ? 'bg-[#f4b52e] text-[#211b17]' : 'bg-[#ede5d5] text-[#695a48]'
+                            admin.role === 'owner' ? 'bg-[#D97757] text-[#FFFFFF]' : 'bg-[#FAF4ED] text-[#B05330] border border-[#F0E4D5]'
                           }`}>
                             {admin.role === 'owner' ? '👑 OWNER' : '🛡️ ADMIN'}
                           </span>
                         </td>
                         <td className="p-3.5">
                           {admin.role === 'owner' ? (
-                            <span className="text-[11px] font-bold text-[#2b8a3e]">Acesso Total</span>
+                            <span className="text-[11px] font-bold text-[#2E7D32]">Acesso Total</span>
                           ) : (
                             <div className="flex flex-wrap gap-1 max-w-xs">
                               {admin.permissions.map(p => (
-                                <span key={p} className="bg-white border border-[#ded2c0] text-[9px] px-1.5 py-0.5 rounded font-mono">
+                                <span key={p} className="bg-[#FAF8F5] border border-[#E7E0D6] text-[9px] px-1.5 py-0.5 rounded font-mono text-[#6E675D]">
                                   {p.replace('products.', '')}
                                 </span>
                               ))}
@@ -748,7 +730,7 @@ export function AdminPanel({
                         </td>
                         <td className="p-3.5">
                           <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                            admin.is_active ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800'
+                            admin.is_active ? 'bg-emerald-50 border border-emerald-200 text-emerald-700' : 'bg-red-50 border border-red-200 text-red-600'
                           }`}>
                             {admin.is_active ? 'Ativo' : 'Desativado'}
                           </span>
@@ -759,8 +741,8 @@ export function AdminPanel({
                               onClick={() => handleToggleAdminStatus(admin)}
                               className={`text-xs font-bold px-3 py-1 rounded-full transition-colors ${
                                 admin.is_active 
-                                  ? 'border border-red-400 text-red-600 hover:bg-red-50' 
-                                  : 'bg-emerald-600 text-white hover:bg-emerald-700'
+                                  ? 'border border-red-200 text-red-600 hover:bg-red-50' 
+                                  : 'bg-emerald-600 text-[#fff] hover:bg-emerald-700'
                               }`}
                             >
                               {admin.is_active ? 'Desativar' : 'Reativar'}
@@ -777,16 +759,16 @@ export function AdminPanel({
 
           {/* Convites Pendentes */}
           {invitationsList.length > 0 && (
-            <div className="rounded-2xl border border-[#ded2c0] bg-[#fbf8f0] p-4 shadow-sm">
-              <h4 className="font-extrabold text-xs uppercase tracking-wider text-[#695a48] mb-3">
+            <div className="rounded-2xl border border-[#E7E0D6] bg-[#FFFFFF] p-4 shadow-xs">
+              <h4 className="font-extrabold text-xs uppercase tracking-wider text-[#6E675D] mb-3">
                 Convites Pendentes de Ativação ({invitationsList.length})
               </h4>
               <div className="space-y-2">
                 {invitationsList.map(inv => (
-                  <div key={inv.id} className="flex items-center justify-between p-3 rounded-xl bg-white border border-[#ded2c0] text-xs">
+                  <div key={inv.id} className="flex items-center justify-between p-3 rounded-xl bg-[#FAF8F5] border border-[#E7E0D6] text-xs">
                     <div>
-                      <span className="font-bold text-[#211b17]">{inv.email}</span>
-                      <span className="ml-2 text-[10px] text-[#887864] font-mono">
+                      <span className="font-bold text-[#1E1D1B]">{inv.email}</span>
+                      <span className="ml-2 text-[10px] text-[#736B60] font-mono">
                         Expira em: {new Date(inv.expires_at).toLocaleDateString('pt-BR')}
                       </span>
                     </div>
@@ -810,22 +792,22 @@ export function AdminPanel({
       {/* ========================================================================= */}
       {activeSection === 'audit' && isOwner && (
         <div className="container-lucca pt-4 sm:pt-8 space-y-6 sm:space-y-8 animate-rise">
-          <div className="rounded-2xl border border-[#ded2c0] bg-[#fbf8f0] overflow-hidden shadow-sm">
-            <div className="p-4 border-b border-[#ded2c0] bg-[#ede5d5] flex items-center justify-between">
+          <div className="rounded-2xl border border-[#E7E0D6] bg-[#FFFFFF] overflow-hidden shadow-xs">
+            <div className="p-4 border-b border-[#E7E0D6] bg-[#FAF8F5] flex items-center justify-between">
               <div>
-                <h4 className="font-extrabold text-xs uppercase tracking-wider text-[#695a48]">
+                <h4 className="font-extrabold text-xs uppercase tracking-wider text-[#6E675D]">
                   Logs de Auditoria de Segurança
                 </h4>
-                <p className="text-[11px] text-[#887864]">Registro imutável de ações administrativas gravadas no banco de dados.</p>
+                <p className="text-[11px] text-[#736B60]">Registro imutável de ações administrativas gravadas no banco de dados.</p>
               </div>
-              <button onClick={loadAuditLogs} className="text-xs text-[#8f6412] font-bold hover:underline">
+              <button onClick={loadAuditLogs} className="text-xs text-[#B05330] font-bold hover:underline">
                 Recarregar Logs
               </button>
             </div>
 
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs text-[#241c16]">
-                <thead className="border-b border-[#ded2c0] bg-[#f4efe5] text-[#887864] text-[10px] uppercase font-bold">
+              <table className="w-full text-left text-xs text-[#1E1D1B]">
+                <thead className="border-b border-[#E7E0D6] bg-[#FFFFFF] text-[#736B60] text-[10px] uppercase font-bold">
                   <tr>
                     <th className="p-3.5">Data / Hora</th>
                     <th className="p-3.5">Usuário (Actor)</th>
@@ -834,29 +816,29 @@ export function AdminPanel({
                     <th className="p-3.5">Detalhes</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-[#ded2c0]">
+                <tbody className="divide-y divide-[#F0EAE0]">
                   {loadingAudit ? (
                     <tr>
-                      <td colSpan={5} className="p-6 text-center text-[#887864]">Carregando logs de auditoria...</td>
+                      <td colSpan={5} className="p-6 text-center text-[#8E8578]">Carregando logs de auditoria...</td>
                     </tr>
                   ) : auditLogs.length === 0 ? (
                     <tr>
-                      <td colSpan={5} className="p-6 text-center text-[#887864]">Nenhum registro de auditoria encontrado.</td>
+                      <td colSpan={5} className="p-6 text-center text-[#8E8578]">Nenhum registro de auditoria encontrado.</td>
                     </tr>
                   ) : (
                     auditLogs.map(log => (
-                      <tr key={log.id} className="hover:bg-[#f4efe5]">
-                        <td className="p-3.5 font-mono text-[11px] text-[#887864] whitespace-nowrap">
+                      <tr key={log.id} className="hover:bg-[#FAF9F6]">
+                        <td className="p-3.5 font-mono text-[11px] text-[#736B60] whitespace-nowrap">
                           {new Date(log.created_at).toLocaleString('pt-BR')}
                         </td>
-                        <td className="p-3.5 font-bold text-[#211b17]">{log.actor_email}</td>
+                        <td className="p-3.5 font-bold text-[#1E1D1B]">{log.actor_email}</td>
                         <td className="p-3.5">
-                          <span className="bg-[#211b17] text-[#f4b52e] px-2 py-0.5 rounded font-mono text-[10px] font-bold">
+                          <span className="bg-[#FAF2EB] text-[#B05330] border border-[#F0D5C7] px-2 py-0.5 rounded font-mono text-[10px] font-bold">
                             {log.action}
                           </span>
                         </td>
-                        <td className="p-3.5 font-mono text-[10px] text-[#695a48]">{log.resource || '-'}</td>
-                        <td className="p-3.5 text-[11px] font-mono text-[#887864] max-w-xs truncate">
+                        <td className="p-3.5 font-mono text-[10px] text-[#6E675D]">{log.resource || '-'}</td>
+                        <td className="p-3.5 text-[11px] font-mono text-[#736B60] max-w-xs truncate">
                           {JSON.stringify(log.details)}
                         </td>
                       </tr>
@@ -871,16 +853,16 @@ export function AdminPanel({
 
       {/* Modal de Adicionar / Editar Produto */}
       {isFormOpen && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/70 backdrop-blur-sm p-0 sm:p-4">
-          <div className="w-full max-w-xl max-h-[92vh] sm:max-h-[90vh] overflow-y-auto rounded-t-[24px] sm:rounded-2xl border border-[#45382c] bg-[#211b17] p-4 sm:p-6 text-[#fff4dc] shadow-2xl animate-rise flex flex-col">
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 backdrop-blur-sm p-0 sm:p-4">
+          <div className="w-full max-w-xl max-h-[92vh] sm:max-h-[90vh] overflow-y-auto rounded-t-[24px] sm:rounded-2xl border border-[#E7E0D6] bg-[#FFFFFF] p-4 sm:p-6 text-[#1E1D1B] shadow-2xl animate-rise flex flex-col">
             
-            <div className="flex items-center justify-between border-b border-[#3e3226] pb-3 mb-4 sticky top-0 bg-[#211b17] z-10">
-              <h3 className="display text-base sm:text-lg font-bold text-[#fff4dc]">
+            <div className="flex items-center justify-between border-b border-[#EAE3D8] pb-3 mb-4 sticky top-0 bg-[#FFFFFF] z-10">
+              <h3 className="display text-base sm:text-lg font-bold text-[#1E1D1B]">
                 {editingProduct ? 'Editar Produto' : 'Cadastrar Novo Produto'}
               </h3>
               <button
                 onClick={() => setIsFormOpen(false)}
-                className="flex h-8 w-8 items-center justify-center rounded-full border border-[#45382c] text-[#bcae98] hover:bg-[#2b241e]"
+                className="flex h-8 w-8 items-center justify-center rounded-full border border-[#E0D8CC] text-[#6E675D] hover:text-[#1E1D1B] hover:bg-[#F7F3EC]"
               >
                 <X size={16} />
               </button>
@@ -888,7 +870,7 @@ export function AdminPanel({
 
             <form onSubmit={handleFormSubmit} className="space-y-4">
               <div>
-                <label className="block text-[11px] font-bold uppercase tracking-[.1em] text-[#c9bdad] mb-1.5">
+                <label className="block text-[11px] font-bold uppercase tracking-[.1em] text-[#6E675D] mb-1.5">
                   Nome do Produto *
                 </label>
                 <input
@@ -897,19 +879,19 @@ export function AdminPanel({
                   value={formData.name}
                   onChange={e => setFormData({ ...formData, name: e.target.value })}
                   placeholder="Ex: Capinha Silicone iPhone 15 Pro Max"
-                  className="h-11 w-full rounded-xl border border-[#45382c] bg-[#171411] px-3.5 text-xs text-[#fff4dc] outline-none focus:border-[#f4b52e]"
+                  className="h-11 w-full rounded-xl border border-[#DED6CA] bg-[#FFFFFF] px-3.5 text-xs text-[#1E1D1B] outline-none focus:border-[#D97757] shadow-2xs"
                 />
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[11px] font-bold uppercase tracking-[.1em] text-[#c9bdad] mb-1.5">
+                  <label className="block text-[11px] font-bold uppercase tracking-[.1em] text-[#6E675D] mb-1.5">
                     Categoria *
                   </label>
                   <select
                     value={formData.category}
                     onChange={e => setFormData({ ...formData, category: e.target.value as any })}
-                    className="h-11 w-full rounded-xl border border-[#45382c] bg-[#171411] px-3 text-xs text-[#fff4dc] outline-none focus:border-[#f4b52e]"
+                    className="h-11 w-full rounded-xl border border-[#DED6CA] bg-[#FFFFFF] px-3 text-xs text-[#1E1D1B] outline-none focus:border-[#D97757] shadow-2xs"
                   >
                     <option value="Capinhas">Capinhas</option>
                     <option value="Cabos e carregadores">Cabos e carregadores</option>
@@ -920,7 +902,7 @@ export function AdminPanel({
                 </div>
 
                 <div>
-                  <label className="block text-[11px] font-bold uppercase tracking-[.1em] text-[#c9bdad] mb-1.5">
+                  <label className="block text-[11px] font-bold uppercase tracking-[.1em] text-[#6E675D] mb-1.5">
                     URL da Imagem (Opcional)
                   </label>
                   <input
@@ -928,14 +910,14 @@ export function AdminPanel({
                     value={formData.image}
                     onChange={e => setFormData({ ...formData, image: e.target.value })}
                     placeholder="https://exemplo.com/foto.jpg"
-                    className="h-11 w-full rounded-xl border border-[#45382c] bg-[#171411] px-3.5 text-xs text-[#fff4dc] outline-none focus:border-[#f4b52e]"
+                    className="h-11 w-full rounded-xl border border-[#DED6CA] bg-[#FFFFFF] px-3.5 text-xs text-[#1E1D1B] outline-none focus:border-[#D97757] shadow-2xs"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[11px] font-bold uppercase tracking-[.1em] text-[#c9bdad] mb-1.5">
+                  <label className="block text-[11px] font-bold uppercase tracking-[.1em] text-[#6E675D] mb-1.5">
                     Preço de Venda (R$) *
                   </label>
                   <input
@@ -944,12 +926,12 @@ export function AdminPanel({
                     value={formData.price}
                     onChange={e => setFormData({ ...formData, price: e.target.value })}
                     placeholder="89,90"
-                    className="h-11 w-full rounded-xl border border-[#45382c] bg-[#171411] px-3.5 text-xs text-[#fff4dc] outline-none focus:border-[#f4b52e]"
+                    className="h-11 w-full rounded-xl border border-[#DED6CA] bg-[#FFFFFF] px-3.5 text-xs text-[#1E1D1B] outline-none focus:border-[#D97757] shadow-2xs"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-[11px] font-bold uppercase tracking-[.1em] text-[#c9bdad] mb-1.5">
+                  <label className="block text-[11px] font-bold uppercase tracking-[.1em] text-[#6E675D] mb-1.5">
                     Preço Antigo (R$)
                   </label>
                   <input
@@ -957,26 +939,26 @@ export function AdminPanel({
                     value={formData.oldPrice}
                     onChange={e => setFormData({ ...formData, oldPrice: e.target.value })}
                     placeholder="109,90"
-                    className="h-11 w-full rounded-xl border border-[#45382c] bg-[#171411] px-3.5 text-xs text-[#fff4dc] outline-none focus:border-[#f4b52e]"
+                    className="h-11 w-full rounded-xl border border-[#DED6CA] bg-[#FFFFFF] px-3.5 text-xs text-[#1E1D1B] outline-none focus:border-[#D97757] shadow-2xs"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-[11px] font-bold uppercase tracking-[.1em] text-[#c9bdad] mb-1.5">
+                <label className="block text-[11px] font-bold uppercase tracking-[.1em] text-[#6E675D] mb-1.5">
                   Descrição
                 </label>
                 <textarea
                   rows={3}
                   value={formData.description}
                   onChange={e => setFormData({ ...formData, description: e.target.value })}
-                  className="w-full rounded-xl border border-[#45382c] bg-[#171411] p-3 text-xs text-[#fff4dc] outline-none focus:border-[#f4b52e]"
+                  className="w-full rounded-xl border border-[#DED6CA] bg-[#FFFFFF] p-3 text-xs text-[#1E1D1B] outline-none focus:border-[#D97757] shadow-2xs"
                 />
               </div>
 
               <button
                 type="submit"
-                className="w-full h-11 bg-[#f4b52e] text-[#211b17] rounded-xl font-bold text-xs hover:bg-[#eab23d] transition-colors"
+                className="w-full h-11 bg-[#D97757] text-[#FFFFFF] rounded-xl font-bold text-xs hover:bg-[#C85A32] transition-colors shadow-xs"
               >
                 {editingProduct ? 'Salvar Alterações' : 'Confirmar Cadastro'}
               </button>

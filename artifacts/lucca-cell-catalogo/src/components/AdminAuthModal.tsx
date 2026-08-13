@@ -84,24 +84,24 @@ export function AdminAuthModal({ isOpen, onClose, onLoginSuccess }: AdminAuthMod
     <>
       {/* Backdrop */}
       <div 
-        className="fixed inset-0 z-50 bg-[#171411]/80 backdrop-blur-md transition-opacity"
+        className="fixed inset-0 z-50 bg-[#1E1D1B]/40 backdrop-blur-sm transition-opacity"
         onClick={onClose}
       />
 
       {/* Modal Container */}
       <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
         <div 
-          className="relative w-full max-w-md overflow-hidden rounded-t-[24px] sm:rounded-[24px] border border-[#4b3927] bg-[#211b17] text-[#fff7e6] shadow-[0_25px_60px_rgba(0,0,0,0.6)] animate-rise max-h-[92vh] sm:max-h-[90vh] flex flex-col"
+          className="relative w-full max-w-md overflow-hidden rounded-t-[24px] sm:rounded-[24px] border border-[#E7E0D6] bg-[#FFFFFF] text-[#1E1D1B] shadow-[0_25px_50px_rgba(0,0,0,0.12)] animate-rise max-h-[92vh] sm:max-h-[90vh] flex flex-col"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Top Gold Line */}
-          <div className="h-1.5 w-full bg-gradient-to-r from-[#d97621] via-[#f4b52e] to-[#e99c28]" />
+          <div className="h-1.5 w-full bg-gradient-to-r from-[#D97757] via-[#E09A38] to-[#D97757]" />
 
           {/* Close button */}
           <button
             type="button"
             onClick={onClose}
-            className="absolute right-4 top-5 flex h-9 w-9 items-center justify-center rounded-full border border-[#45382c] text-[#bcae98] hover:bg-[#2b241e] hover:text-white transition-colors z-10"
+            className="absolute right-4 top-5 flex h-9 w-9 items-center justify-center rounded-full border border-[#E0D8CC] text-[#6E675D] hover:bg-[#F7F3EC] hover:text-[#1E1D1B] transition-colors z-10"
             aria-label="Fechar"
           >
             <X size={18} />
@@ -111,14 +111,14 @@ export function AdminAuthModal({ isOpen, onClose, onLoginSuccess }: AdminAuthMod
             
             {/* Header Icon & Title */}
             <div className="mb-4 flex items-center gap-3">
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-[#67502d] bg-[#2b231c] text-[#f4b52e]">
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-[#F0D5C7] bg-[#FAF2EB] text-[#D97757]">
                 <ShieldCheck size={26} />
               </div>
               <div>
-                <span className="text-[10px] font-extrabold uppercase tracking-[.14em] text-[#d7ad55]">
+                <span className="text-[10px] font-extrabold uppercase tracking-[.14em] text-[#B05330]">
                   Segurança & Acesso
                 </span>
-                <h2 className="display text-[22px] font-semibold leading-tight text-[#fff4dc]">
+                <h2 className="display text-[22px] font-semibold leading-tight text-[#1E1D1B]">
                   Painel Lucca Cell
                 </h2>
               </div>
@@ -127,47 +127,47 @@ export function AdminAuthModal({ isOpen, onClose, onLoginSuccess }: AdminAuthMod
             {/* FORMULÁRIO DE LOGIN (ÚNICA TELA) */}
             <form onSubmit={handleLoginSubmit} className="space-y-4 animate-rise mt-4">
               {loginError && (
-                <div className="rounded-xl border border-red-500/40 bg-red-500/10 p-3 text-xs text-red-300 flex items-start gap-2">
-                  <AlertCircle size={16} className="shrink-0 mt-0.5 text-red-400" />
+                <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-xs text-red-600 flex items-start gap-2">
+                  <AlertCircle size={16} className="shrink-0 mt-0.5 text-red-500" />
                   <span className="leading-relaxed">{loginError}</span>
                 </div>
               )}
 
               <div>
-                <label className="block text-[11px] font-bold uppercase tracking-[.1em] text-[#c9bdad] mb-1.5">
+                <label className="block text-[11px] font-bold uppercase tracking-[.1em] text-[#6E675D] mb-1.5">
                   E-mail do Proprietário
                 </label>
                 <div className="relative">
-                  <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#8d7e6d]" size={16} />
+                  <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#8E8578]" size={16} />
                   <input
                     type="email"
                     required
                     value={loginEmail}
                     onChange={(e) => setLoginEmail(e.target.value)}
                     placeholder="seu.email@exemplo.com"
-                    className="h-11 w-full rounded-xl border border-[#45382c] bg-[#171411] pl-10 pr-4 text-xs text-[#fff4dc] placeholder:text-[#6e6153] outline-none focus:border-[#f4b52e]"
+                    className="h-11 w-full rounded-xl border border-[#DED6CA] bg-[#FFFFFF] pl-10 pr-4 text-xs text-[#1E1D1B] placeholder:text-[#8E8578] outline-none focus:border-[#D97757] shadow-2xs"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-[11px] font-bold uppercase tracking-[.1em] text-[#c9bdad] mb-1.5">
+                <label className="block text-[11px] font-bold uppercase tracking-[.1em] text-[#6E675D] mb-1.5">
                   Senha de Acesso
                 </label>
                 <div className="relative">
-                  <KeyRound className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#8d7e6d]" size={16} />
+                  <KeyRound className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#8E8578]" size={16} />
                   <input
                     type={showPassword ? 'text' : 'password'}
                     required
                     value={loginPassword}
                     onChange={(e) => setLoginPassword(e.target.value)}
                     placeholder="Sua senha"
-                    className="h-11 w-full rounded-xl border border-[#45382c] bg-[#171411] pl-10 pr-10 text-xs text-[#fff4dc] placeholder:text-[#6e6153] outline-none focus:border-[#f4b52e]"
+                    className="h-11 w-full rounded-xl border border-[#DED6CA] bg-[#FFFFFF] pl-10 pr-10 text-xs text-[#1E1D1B] placeholder:text-[#8E8578] outline-none focus:border-[#D97757] shadow-2xs"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#8d7e6d] hover:text-[#fff4dc]"
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#8E8578] hover:text-[#1E1D1B]"
                   >
                     {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                   </button>
@@ -178,22 +178,20 @@ export function AdminAuthModal({ isOpen, onClose, onLoginSuccess }: AdminAuthMod
                 <button
                   type="button"
                   onClick={onClose}
-                  className="h-11 rounded-full border border-[#69543c] px-5 text-xs font-bold text-[#e8d9bf] hover:border-[#eab23d]"
+                  className="h-11 rounded-full border border-[#DED6CA] bg-[#FFFFFF] px-5 text-xs font-bold text-[#5C554B] hover:border-[#D97757]"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
                   disabled={loading}
-                  className="flex-1 h-11 flex items-center justify-center gap-2 rounded-full bg-[#f4b52e] px-6 text-xs font-extrabold text-[#261c14] active:scale-95 shadow-md disabled:opacity-50"
+                  className="flex-1 h-11 flex items-center justify-center gap-2 rounded-full bg-[#D97757] px-6 text-xs font-extrabold text-[#FFFFFF] hover:bg-[#C85A32] active:scale-95 shadow-sm disabled:opacity-50"
                 >
                   <Lock size={14} />
                   <span>{loading ? 'Validando...' : 'Acessar Painel'}</span>
                 </button>
               </div>
             </form>
-
-
           </div>
         </div>
       </div>
