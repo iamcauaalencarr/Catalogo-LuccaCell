@@ -8,7 +8,6 @@
     "artifacts/**/*.{ts,tsx,js,jsx}"
   ],
   "ignoreDependencies": [
-    "@replit/*",
     "tw-animate-css"
   ]
 }

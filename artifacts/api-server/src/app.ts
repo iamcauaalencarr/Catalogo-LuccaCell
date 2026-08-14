@@ -36,8 +36,7 @@ const allowedOrigins = [
 app.use(
   cors({
     origin: (origin, callback) => {
-      // Permite requisições sem origin (como ferramentas locais ou apps mobile) ou se estiver na whitelist
-      if (!origin || allowedOrigins.includes(origin) || origin.endsWith(".replit.dev") || origin.endsWith(".repl.co")) {
+      if (!origin || allowedOrigins.includes(origin)) {
         callback(null, true);
       } else {
         callback(new Error("Acesso negado por política de CORS."));
