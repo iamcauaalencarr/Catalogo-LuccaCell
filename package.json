@@ -4,7 +4,7 @@
   "license": "MIT",
   "packageManager": "pnpm@10.5.2",
   "scripts": {
-    "build": "pnpm --filter @workspace/lucca-cell-catalogo run build",
+    "build": "pnpm --filter @workspace/lucca-cell-catalogo run build && node -e \"const fs=require('fs'); fs.cpSync('artifacts/lucca-cell-catalogo/dist', 'dist', {recursive: true});\"",
     "typecheck:libs": "tsc --build",
     "typecheck": "pnpm -r --filter \"./artifacts/**\" --filter \"./scripts\" --if-present run typecheck",
     "lint:biome": "biome check .",
