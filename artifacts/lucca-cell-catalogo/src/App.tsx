@@ -14,6 +14,7 @@ import { ThermalReceiptModal, type ReceiptData } from '@/components/ThermalRecei
 import { signOutAdminFromSupabase, getSupabaseUser, AdminProfile, logSecurityAction, supabase } from '@/lib/supabase';
 import { CATEGORIAS_VALIDAS } from '@/services/openrouter';
 import { AdminStore } from '@/services/adminStore';
+import { NotFoundPage } from '@/components/NotFoundPage';
 
 const queryClient = new QueryClient();
 
@@ -846,23 +847,51 @@ export function App() {
     }
   };
 
-  // Detectar rota secreta /natal ou #natal
+  const [isNotFound, setIsNotFound] = useState(false);
+
+  // Gerenciamento de rotas (Catálogo, Admin /natal e Erro 404)
   useEffect(() => {
-    const checkNatalSecretRoute = () => {
-      const fullUrl = (window.location.pathname + window.location.hash + window.location.search).toLowerCase();
+    const handleRouteCheck = () => {
+      const pathname = window.location.pathname.replace(/\/+$/, '') || '/';
+      const hash = window.location.hash.toLowerCase();
+      const fullUrl = (pathname + hash + window.location.search).toLowerCase();
+
+      // 1. Rota de administração /natal ou #natal
       if (fullUrl.includes('natal')) {
+        setIsNotFound(false);
         handleOpenAdmin();
+        return;
+      }
+
+      // 2. Rota principal válida
+      if (pathname === '/' || pathname === '') {
+        setIsNotFound(false);
+      } else {
+        // 3. Qualquer outra rota não reconhecida
+        setIsNotFound(true);
       }
     };
 
-    checkNatalSecretRoute();
-    window.addEventListener('hashchange', checkNatalSecretRoute);
-    window.addEventListener('popstate', checkNatalSecretRoute);
+    handleRouteCheck();
+    window.addEventListener('hashchange', handleRouteCheck);
+    window.addEventListener('popstate', handleRouteCheck);
     return () => {
-      window.removeEventListener('hashchange', checkNatalSecretRoute);
-      window.removeEventListener('popstate', checkNatalSecretRoute);
+      window.removeEventListener('hashchange', handleRouteCheck);
+      window.removeEventListener('popstate', handleRouteCheck);
     };
   }, [isAdminLoggedIn, currentAdminUser]);
+
+  if (isNotFound) {
+    return (
+      <NotFoundPage
+        onGoHome={() => {
+          window.history.pushState({}, '', '/');
+          setIsNotFound(false);
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }}
+      />
+    );
+  }
 
   return (
     <div id="topo" className="catalog-shell bg-[#FAF7F2] text-[#1E1D1B]">
