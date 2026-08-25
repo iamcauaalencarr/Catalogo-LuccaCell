@@ -79,38 +79,44 @@ export function ThermalReceiptModal({
                 padding: 0;
               }
               body {
-                font-family: 'Courier New', Courier, monospace;
+                font-family: 'Consolas', 'Lucida Console', 'Segoe UI Mono', 'Courier New', monospace;
                 width: 72mm;
                 max-width: 80mm;
                 margin: 0 auto;
-                padding: 4mm 2mm 8mm 2mm;
-                font-size: 11px;
-                line-height: 1.25;
+                padding: 3mm 2mm 8mm 2mm;
+                font-size: 12.5px;
+                font-weight: 600;
+                line-height: 1.35;
+                letter-spacing: 0.2px;
                 color: #000000 !important;
                 background: #ffffff !important;
                 -webkit-print-color-adjust: exact;
                 print-color-adjust: exact;
               }
               .text-center { text-align: center; }
-              .font-bold { font-weight: bold; }
-              .font-black { font-weight: 900; }
+              .text-right { text-align: right; }
+              .font-bold { font-weight: 800 !important; }
+              .font-black { font-weight: 900 !important; }
               .uppercase { text-transform: uppercase; }
-              .border-b-dashed { border-bottom: 1px dashed #000; }
-              .border-b-dotted { border-bottom: 1px dotted #555; }
-              .border-t-dotted { border-top: 1px dotted #555; }
-              .flex-between { display: flex; justify-content: space-between; }
+              .border-b, .border-b-dashed { border-bottom: 1.5px dashed #000 !important; }
+              .border-t, .border-t-dashed { border-top: 1.5px dashed #000 !important; }
+              .border-dotted { border-bottom: 1px dotted #000 !important; }
+              .flex, .flex-between { display: flex; justify-content: space-between; }
               .flex-col { display: flex; flex-direction: column; }
-              .py-1 { padding-top: 4px; padding-bottom: 4px; }
-              .py-2 { padding-top: 6px; padding-bottom: 6px; }
-              .pt-1 { padding-top: 4px; }
-              .pb-1 { padding-bottom: 4px; }
-              .pb-2 { padding-bottom: 6px; }
-              .mt-1 { margin-top: 4px; }
-              .text-lg { font-size: 14px; }
-              .text-sm { font-size: 11px; }
-              .text-xs { font-size: 9.5px; }
-              .text-xxs { font-size: 8px; }
-              .color-detail { padding-left: 12px; font-size: 9px; color: #333; }
+              .py-1 { padding-top: 3px; padding-bottom: 3px; }
+              .py-2 { padding-top: 5px; padding-bottom: 5px; }
+              .pt-1 { padding-top: 3px; }
+              .pb-1 { padding-bottom: 3px; }
+              .pb-2 { padding-bottom: 5px; }
+              .mt-1 { margin-top: 3px; }
+              .space-y-0\\.5 > * + * { margin-top: 2px; }
+              .space-y-1 > * + * { margin-top: 4px; }
+              .space-y-1\\.5 > * + * { margin-top: 5px; }
+              .text-lg { font-size: 16px; font-weight: 900; }
+              .text-sm { font-size: 13px; }
+              .text-xs { font-size: 11px; }
+              .text-xxs { font-size: 9.5px; }
+              .color-detail { padding-left: 10px; font-size: 11px; font-weight: bold; color: #000; }
             </style>
           </head>
           <body>
@@ -170,11 +176,12 @@ export function ThermalReceiptModal({
             <div 
               id="thermal-receipt-print"
               ref={receiptRef}
-              className="w-full max-w-[320px] bg-white p-4 shadow-md font-mono text-[11px] leading-tight text-black border border-stone-300 select-all"
+              className="w-full max-w-[320px] bg-white p-4 shadow-md font-mono text-[12px] leading-tight text-black border border-stone-300 select-all"
               style={{
-                fontFamily: "'Courier New', Courier, monospace",
+                fontFamily: "'Consolas', 'Lucida Console', 'Segoe UI Mono', monospace",
                 color: '#000000',
-                backgroundColor: '#ffffff'
+                backgroundColor: '#ffffff',
+                fontWeight: 600
               }}
             >
               {/* Header do Cupom */}
