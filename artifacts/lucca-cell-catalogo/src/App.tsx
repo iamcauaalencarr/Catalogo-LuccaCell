@@ -377,7 +377,6 @@ function CartDrawer({
   onClose, 
   onQuantity, 
   onRemove,
-  onOpenReceipt,
   onOpenPix 
 }: { 
   open: boolean; 
@@ -385,7 +384,6 @@ function CartDrawer({
   onClose: () => void; 
   onQuantity: (index: number, delta: number) => void; 
   onRemove: (index: number) => void;
-  onOpenReceipt: (data: ReceiptData) => void;
   onOpenPix: () => void;
 }) {
   const totals = calculateCartTotals(lines);
@@ -395,13 +393,6 @@ function CartDrawer({
     const phone = '5597991554563';
     const url = `https://wa.me/${phone}?text=${encodeURIComponent(text)}`;
     window.open(url, '_blank');
-    
-    // Abre a notinha térmica estruturada
-    onOpenReceipt(buildThermalReceiptPayload(lines, totals));
-  };
-
-  const handleOpenDirectReceipt = () => {
-    onOpenReceipt(buildThermalReceiptPayload(lines, totals));
   };
 
   return (
@@ -488,15 +479,6 @@ function CartDrawer({
                 className="flex w-full items-center justify-center gap-2 rounded-full bg-[#D97757] py-3 text-xs font-bold text-[#FFFFFF] transition-colors hover:bg-[#C85A32] active:scale-95 shadow-xs"
               >
                 Pedir pelo WhatsApp <ArrowRight size={15} />
-              </button>
-
-              <button 
-                type="button" 
-                onClick={handleOpenDirectReceipt} 
-                data-testid="button-print-receipt" 
-                className="flex w-full items-center justify-center gap-2 rounded-full bg-[#FAF7F2] border border-[#E0D8CC] py-2.5 text-xs font-bold text-[#1E1D1B] transition-colors hover:bg-[#F0EAE1] active:scale-95 shadow-2xs"
-              >
-                <Printer size={15} className="text-[#D97757]" /> Imprimir Notinha (Epson TM-T20X)
               </button>
             </div>
             
@@ -1282,7 +1264,6 @@ export function App() {
         onClose={() => setCartOpen(false)} 
         onQuantity={changeQuantity} 
         onRemove={removeLine}
-        onOpenReceipt={setActiveReceiptData}
         onOpenPix={() => setIsPixModalOpen(true)}
       />
 
