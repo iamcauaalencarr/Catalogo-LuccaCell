@@ -303,13 +303,28 @@ export function AIVisionModal({ isOpen, onClose, onApplyAIData }: AIVisionModalP
 
                     {/* Modelo Real Utilizado (Comprovação) */}
                     {scannedResult.modelUsed && (
-                      <div className="border-t border-[#45382c] pt-2 mt-1 flex items-center justify-between text-[11px]">
-                        <span className="text-[#8d7e6d] flex items-center gap-1">
-                          <Cpu size={12} className="text-[#f4b52e]" /> Modelo que processou:
-                        </span>
-                        <code className="rounded bg-[#171411] border border-[#22c55e]/40 px-2 py-0.5 text-[10px] font-mono text-[#4ade80] flex items-center gap-1">
-                          <CheckCircle2 size={10} /> {scannedResult.modelUsed}
-                        </code>
+                      <div className="border-t border-[#45382c] pt-2 mt-1 space-y-1.5">
+                        <div className="flex items-center justify-between text-[11px]">
+                          <span className="text-[#8d7e6d] flex items-center gap-1">
+                            <Cpu size={12} className="text-[#f4b52e]" /> Modelo que processou:
+                          </span>
+                          <code className={`rounded bg-[#171411] border px-2 py-0.5 text-[10px] font-mono flex items-center gap-1 ${
+                            scannedResult.isFallback 
+                              ? 'border-amber-500/40 text-amber-300' 
+                              : 'border-[#22c55e]/40 text-[#4ade80]'
+                          }`}>
+                            <CheckCircle2 size={10} /> {scannedResult.modelUsed}
+                          </code>
+                        </div>
+
+                        {scannedResult.isFallback && (
+                          <div className="rounded-lg bg-amber-950/40 border border-amber-500/30 p-2 text-[10px] text-amber-200/90 flex items-center gap-1.5">
+                            <Sparkles size={13} className="text-amber-400 shrink-0" />
+                            <span>
+                              <strong>Contingência Automática:</strong> A IA principal ({getModelDisplayName(scannedResult.primaryFailedModel || '')}) oscilou e o sistema usou a IA reserva para não interromper seu cadastro.
+                            </span>
+                          </div>
+                        )}
                       </div>
                     )}
 

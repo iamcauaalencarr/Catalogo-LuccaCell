@@ -22,6 +22,8 @@ export type ScannedProductData = {
   infoObservadas: string[];
   alertas: string[];
   modelUsed?: string;
+  isFallback?: boolean;
+  primaryFailedModel?: string;
 };
 
 // ─────────────────────────────────────────────────────────────
@@ -419,12 +421,21 @@ export async function fetchOpenRouterModels(): Promise<OpenRouterModelItem[]> {
   }
 }
 
-async function callOpenRouterDirect(imageBase64: string): Promise<Record<string, any>> {
-  const selectedModel = getSelectedOpenRouterModel();
+export const FALLBACK_VISION_MODELS: readonly string[] = [
+  'openrouter/free',
+  'nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free',
+  'nvidia/nemotron-3.5-lightning:free',
+];
+
+async function callOpenRouterDirect(
+  imageBase64: string,
+  modelOverride?: string
+): Promise<Record<string, any>> {
+  const selectedModel = modelOverride || getSelectedOpenRouterModel();
   const { temperature, customInstructions } = getAiSettings();
 
-  const formattedImage = imageBase64.startsWith('data:') 
-    ? imageBase64 
+  const formattedImage = imageBase64.startsWith('data:image/')
+    ? imageBase64
     : `data:image/jpeg;base64,${imageBase64}`;
 
   const effectivePrompt = customInstructions
@@ -526,7 +537,7 @@ async function callOpenRouterDirect(imageBase64: string): Promise<Record<string,
 async function callClaudeDirect(imageBase64: string): Promise<Record<string, any>> {
   if (!ANTHROPIC_API_KEY) {
     // Se não tiver chave direta Anthropic, executa pelo OpenRouter
-    return callOpenRouterDirect(imageBase64);
+    return callOpenRouterDirect(imageBase64, 'anthropic/claude-3-5-haiku');
   }
 
   const { customInstructions } = getAiSettings();
@@ -599,21 +610,59 @@ async function callClaudeDirect(imageBase64: string): Promise<Record<string, any
 }
 
 // ─────────────────────────────────────────────────────────────
-// FUNÇÃO PRINCIPAL — HÍBRIDA
+// FUNÇÃO PRINCIPAL — COM CONTINGÊNCIA INTELIGENTE (FAILOVER)
 // ─────────────────────────────────────────────────────────────
 
 export async function analyzeProductImage(originalBase64: string): Promise<ScannedProductData> {
   const imageBase64 = await compressImageForAI(originalBase64, 1280);
-  const selectedModel = getSelectedOpenRouterModel();
+  const primaryModel = getSelectedOpenRouterModel();
 
-  let directResult: Record<string, any>;
-  if (selectedModel.toLowerCase().includes('claude') || selectedModel.toLowerCase().includes('anthropic')) {
-    directResult = await callClaudeDirect(imageBase64);
-  } else {
-    directResult = await callOpenRouterDirect(imageBase64);
+  // 1. Tenta executar com o modelo principal escolhido pelo usuário
+  try {
+    let directResult: Record<string, any>;
+    if (primaryModel.toLowerCase().includes('claude') || primaryModel.toLowerCase().includes('anthropic')) {
+      directResult = await callClaudeDirect(imageBase64);
+    } else {
+      directResult = await callOpenRouterDirect(imageBase64, primaryModel);
+    }
+
+    const modelUsed = directResult._modelUsed || primaryModel;
+    console.log(`[Lucca Cell AI] ✅ Análise concluída com sucesso no modelo principal: ${modelUsed}`);
+    return validateAndSanitize(directResult, imageBase64, modelUsed);
+  } catch (primaryErr: any) {
+    console.warn(
+      `[Lucca Cell AI] ⚠️ Modelo principal (${primaryModel}) falhou: ${primaryErr?.message || primaryErr}. Iniciando contingência automática...`
+    );
+
+    // 2. Esteira de Contingência (Fallback em Cadeia)
+    // Tenta modelos gratuitos e resilientes sem alterar a configuração salva do usuário
+    const fallbackCandidates = FALLBACK_VISION_MODELS.filter((m) => m !== primaryModel);
+    let lastError = primaryErr;
+
+    for (const fallbackModel of fallbackCandidates) {
+      try {
+        console.log(`[Lucca Cell AI] 🔄 Tentando IA de contingência: ${fallbackModel}...`);
+        const fallbackResult = await callOpenRouterDirect(imageBase64, fallbackModel);
+        const modelUsed = fallbackResult._modelUsed || fallbackModel;
+        console.log(`[Lucca Cell AI] 🛡️ Foto analisada com sucesso via contingência: ${modelUsed}`);
+
+        const sanitized = validateAndSanitize(
+          fallbackResult,
+          imageBase64,
+          `${getModelDisplayName(modelUsed)} (Contingência)`
+        );
+        sanitized.isFallback = true;
+        sanitized.primaryFailedModel = primaryModel;
+        return sanitized;
+      } catch (fallbackErr: any) {
+        console.warn(`[Lucca Cell AI] Contingência (${fallbackModel}) falhou:`, fallbackErr?.message || fallbackErr);
+        lastError = fallbackErr;
+      }
+    }
+
+    // Se até os modelos de contingência falharem, lança erro com explicação clara
+    throw new Error(
+      `Não foi possível analisar a imagem. A IA principal (${getModelDisplayName(primaryModel)}) e os modelos de contingência retornaram erro: ${lastError?.message || 'Indisponibilidade de rede/provedor'}`
+    );
   }
-
-  const modelUsed = directResult._modelUsed || selectedModel;
-  console.log(`[Lucca Cell Client] Análise de visão por IA realizada com o modelo: ${modelUsed}`);
-  return validateAndSanitize(directResult, imageBase64, modelUsed);
 }
