@@ -82,14 +82,14 @@ export function AdminAuthModal({ isOpen, onClose, onLoginSuccess }: AdminAuthMod
 
   return (
     <>
-      {/* Backdrop */}
+      {/* Backdrop de Alta Segurança */}
       <div 
-        className="fixed inset-0 z-50 bg-[#1E1D1B]/40 backdrop-blur-sm transition-opacity"
+        className="fixed inset-0 z-[100] bg-[#141210]/85 backdrop-blur-md transition-opacity"
         onClick={onClose}
       />
 
       {/* Modal Container */}
-      <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
+      <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4">
         <div 
           className="relative w-full max-w-md overflow-hidden rounded-t-[24px] sm:rounded-[24px] border border-[#E7E0D6] bg-[#FFFFFF] text-[#1E1D1B] shadow-[0_25px_50px_rgba(0,0,0,0.12)] animate-rise max-h-[92vh] sm:max-h-[90vh] flex flex-col"
           onClick={(e) => e.stopPropagation()}

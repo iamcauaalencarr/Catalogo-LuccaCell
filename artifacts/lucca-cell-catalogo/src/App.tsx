@@ -1,4 +1,4 @@
-import { type LucideIcon, ArrowRight, BatteryCharging, Cable, Check, ChevronDown, CircleCheck, Clock3, Headphones, Heart, Laptop, MapPin, Menu, MessageCircle, Minus, PackageCheck, Plus, RotateCcw, Search, ShieldCheck, ShoppingBag, SlidersHorizontal, Smartphone, Sparkles, Star, Tablet, Trash2, Truck, Wrench, X, Zap, Lock } from 'lucide-react';
+import { type LucideIcon, ArrowRight, BatteryCharging, Cable, Check, ChevronDown, CircleCheck, Clock3, Headphones, Heart, Laptop, MapPin, Menu, MessageCircle, Minus, PackageCheck, Plus, RotateCcw, Search, ShieldCheck, ShoppingBag, SlidersHorizontal, Smartphone, Sparkles, Star, Tablet, Trash2, Truck, Wrench, X, Zap, Lock, Watch, Tag, Printer } from 'lucide-react';
 import { useMemo, useState, useEffect } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ErrorBoundary } from '@/components/error-boundary';
@@ -6,21 +6,36 @@ import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import logoPath from '@assets/LOGO_1_1786564407567.png';
 import { AdminAuthModal } from '@/components/AdminAuthModal';
+import { AdminSetPasswordModal } from '@/components/AdminSetPasswordModal';
+import { ProductColorModal } from '@/components/ProductColorModal';
 import { AdminPanel, type Product, type Category } from '@/components/AdminPanel';
-import { signOutAdminFromSupabase, getSupabaseUser, AdminProfile } from '@/lib/supabase';
+import { ProductRequestModal } from '@/components/ProductRequestModal';
+import { ThermalReceiptModal, type ReceiptData } from '@/components/ThermalReceiptModal';
+import { signOutAdminFromSupabase, getSupabaseUser, AdminProfile, logSecurityAction, supabase } from '@/lib/supabase';
+import { CATEGORIAS_VALIDAS } from '@/services/openrouter';
+import { AdminStore } from '@/services/adminStore';
 
 const queryClient = new QueryClient();
 
-type CartLine = { product: Product; quantity: number };
+type CartLine = { product: Product; quantity: number; selectedColor?: string };
 
-const categoryDefinitions: { name: Category; icon: LucideIcon }[] = [
-  { name: 'Todos', icon: Sparkles },
-  { name: 'Capinhas', icon: Smartphone },
-  { name: 'Cabos e carregadores', icon: Zap },
-  { name: 'Áudio', icon: Headphones },
-  { name: 'Proteção', icon: ShieldCheck },
-  { name: 'Assistência', icon: Wrench },
-];
+function getCategoryIcon(categoryName: string): LucideIcon {
+  const lower = categoryName.toLowerCase();
+  if (lower === 'todos') return Sparkles;
+  if (lower.includes('memória') || lower.includes('memoria') || lower.includes('sd') || lower.includes('sandisk') || lower.includes('pendrive') || lower.includes('armazenamento')) return Laptop;
+  if (lower.includes('pulseira') || lower.includes('smartwatch') || lower.includes('relógio') || lower.includes('relogio') || lower.includes('watch')) return Watch;
+  if (lower.includes('iluminação') || lower.includes('iluminacao') || lower.includes('led') || lower.includes('vídeo') || lower.includes('video')) return Sparkles;
+  if (lower.includes('cabo') || lower.includes('carregador') || lower.includes('fonte') || lower.includes('energia')) return Zap;
+  if (lower.includes('áudio') || lower.includes('audio') || lower.includes('fone') || lower.includes('som') || lower.includes('headset') || lower.includes('caixa de som')) return Headphones;
+  if (lower.includes('película') || lower.includes('pelicula') || lower.includes('proteção') || lower.includes('protecao')) return ShieldCheck;
+  if (lower.includes('assistência') || lower.includes('assistencia') || lower.includes('conserto') || lower.includes('reparo')) return Wrench;
+  if (lower.includes('suporte') || lower.includes('veicular') || lower.includes('tripé')) return Smartphone;
+  if (lower.includes('capa') || lower.includes('case') || lower.includes('capinha')) return Smartphone;
+  if (lower.includes('bateria') || lower.includes('power')) return BatteryCharging;
+  if (lower.includes('tablet') || lower.includes('ipad')) return Tablet;
+  if (lower.includes('laptop') || lower.includes('computador') || lower.includes('notebook')) return Laptop;
+  return Tag;
+}
 
 
 
@@ -339,18 +354,58 @@ function Header({
   );
 }
 
-function CartDrawer({ open, lines, onClose, onQuantity, onRemove }: { open: boolean; lines: CartLine[]; onClose: () => void; onQuantity: (id: number, delta: number) => void; onRemove: (id: number) => void }) {
+function CartDrawer({ 
+  open, 
+  lines, 
+  onClose, 
+  onQuantity, 
+  onRemove,
+  onOpenReceipt 
+}: { 
+  open: boolean; 
+  lines: CartLine[]; 
+  onClose: () => void; 
+  onQuantity: (index: number, delta: number) => void; 
+  onRemove: (index: number) => void;
+  onOpenReceipt: (data: ReceiptData) => void;
+}) {
   const subtotal = lines.reduce((sum, line) => sum + line.product.price * line.quantity, 0);
   
+  const createReceiptPayload = (): ReceiptData => ({
+    orderNumber: `LC-${Math.floor(1000 + Math.random() * 9000)}`,
+    date: new Date().toLocaleDateString('pt-BR') + ' ' + new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+    customerName: 'Cliente Balcão / WhatsApp',
+    items: lines.map(l => ({
+      name: l.product.name,
+      quantity: l.quantity,
+      price: l.product.price,
+      color: l.selectedColor
+    })),
+    subtotal,
+    deliveryFee: 0,
+    discount: 0,
+    total: subtotal,
+    paymentMethod: 'A Combinar / Pix',
+    isPickup: true
+  });
+
   const handleFinishWhatsAppOrder = () => {
     const phone = '5597991554563';
     let text = `Olá, Lucca Cell! Gostaria de fazer o pedido pelo catálogo:\n\n`;
     lines.forEach(l => {
-      text += `• ${l.quantity}x ${l.product.name} - ${formatPrice(l.product.price * l.quantity)}\n`;
+      const colorText = l.selectedColor ? ` (Cor: *${l.selectedColor}*)` : '';
+      text += `• ${l.quantity}x ${l.product.name}${colorText} - ${formatPrice(l.product.price * l.quantity)}\n`;
     });
     text += `\n*Total: ${formatPrice(subtotal)}*\nRetirada na loja em Guajará - AM.`;
     const url = `https://wa.me/${phone}?text=${encodeURIComponent(text)}`;
     window.open(url, '_blank');
+    
+    // Abre a notinha térmica
+    onOpenReceipt(createReceiptPayload());
+  };
+
+  const handleOpenDirectReceipt = () => {
+    onOpenReceipt(createReceiptPayload());
   };
 
   return (
@@ -377,22 +432,29 @@ function CartDrawer({ open, lines, onClose, onQuantity, onRemove }: { open: bool
             </div>
           ) : (
             <div className="space-y-3">
-              {lines.map((line) => (
-                <div key={line.product.id} className="animate-slide flex gap-3 border border-[#EAE3D8] bg-[#FAF8F5] rounded-xl p-3">
+              {lines.map((line, idx) => (
+                <div key={`${line.product.id}-${line.selectedColor || 'default'}-${idx}`} className="animate-slide flex gap-3 border border-[#EAE3D8] bg-[#FAF8F5] rounded-xl p-3">
                   <div className="h-[74px] w-[68px] shrink-0 overflow-hidden rounded-lg">
                     <ProductVisual product={line.product} />
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="flex justify-between gap-2">
                       <h3 className="display text-[14px] font-semibold leading-tight text-[#1E1D1B] truncate">{line.product.name}</h3>
-                      <button type="button" onClick={() => onRemove(line.product.id)} data-testid={`button-remove-cart-${line.product.id}`} aria-label={`Remover ${line.product.name}`} className="text-[#8E8578] hover:text-[#D93838]"><Trash2 size={15} /></button>
+                      <button type="button" onClick={() => onRemove(idx)} data-testid={`button-remove-cart-${line.product.id}`} aria-label={`Remover ${line.product.name}`} className="text-[#8E8578] hover:text-[#D93838]"><Trash2 size={15} /></button>
                     </div>
+                    {line.selectedColor && (
+                      <div className="mt-0.5">
+                        <span className="inline-flex items-center gap-1 rounded-md bg-[#FAF2EB] px-2 py-0.5 text-[10px] font-extrabold text-[#D97757] border border-[#F0D5C7]">
+                          🎨 Cor: {line.selectedColor}
+                        </span>
+                      </div>
+                    )}
                     <p className="mt-1 text-[11px] text-[#6E675D]">{formatPrice(line.product.price)}</p>
                     <div className="mt-2 flex items-center justify-between">
                       <div className="flex items-center gap-2 rounded-full border border-[#E0D8CC] bg-[#FFFFFF] px-2 py-0.5">
-                        <button type="button" onClick={() => onQuantity(line.product.id, -1)} data-testid={`button-decrease-cart-${line.product.id}`} aria-label="Diminuir quantidade" className="text-[#6E675D] hover:text-[#1E1D1B]"><Minus size={11} /></button>
+                        <button type="button" onClick={() => onQuantity(idx, -1)} data-testid={`button-decrease-cart-${line.product.id}`} aria-label="Diminuir quantidade" className="text-[#6E675D] hover:text-[#1E1D1B]"><Minus size={11} /></button>
                         <span className="w-3 text-center text-xs font-bold text-[#1E1D1B]">{line.quantity}</span>
-                        <button type="button" onClick={() => onQuantity(line.product.id, 1)} data-testid={`button-increase-cart-${line.product.id}`} aria-label="Aumentar quantidade" className="text-[#6E675D] hover:text-[#1E1D1B]"><Plus size={11} /></button>
+                        <button type="button" onClick={() => onQuantity(idx, 1)} data-testid={`button-increase-cart-${line.product.id}`} aria-label="Aumentar quantidade" className="text-[#6E675D] hover:text-[#1E1D1B]"><Plus size={11} /></button>
                       </div>
                       <strong className="text-xs text-[#1E1D1B]">{formatPrice(line.product.price * line.quantity)}</strong>
                     </div>
@@ -412,14 +474,27 @@ function CartDrawer({ open, lines, onClose, onQuantity, onRemove }: { open: bool
               <span>Retirada</span>
               <span className="font-bold text-[#2E7D32]">Loja Guajará · AM</span>
             </div>
-            <button 
-              type="button" 
-              onClick={handleFinishWhatsAppOrder} 
-              data-testid="button-finish-order" 
-              className="flex w-full items-center justify-center gap-2 rounded-full bg-[#D97757] py-3.5 text-xs font-extrabold text-[#FFFFFF] transition-colors hover:bg-[#C85A32] active:scale-95 shadow-sm"
-            >
-              Pedir pelo WhatsApp <ArrowRight size={15} />
-            </button>
+            
+            <div className="space-y-2.5">
+              <button 
+                type="button" 
+                onClick={handleFinishWhatsAppOrder} 
+                data-testid="button-finish-order" 
+                className="flex w-full items-center justify-center gap-2 rounded-full bg-[#D97757] py-3.5 text-xs font-extrabold text-[#FFFFFF] transition-colors hover:bg-[#C85A32] active:scale-95 shadow-sm"
+              >
+                Pedir pelo WhatsApp <ArrowRight size={15} />
+              </button>
+
+              <button 
+                type="button" 
+                onClick={handleOpenDirectReceipt} 
+                data-testid="button-print-receipt" 
+                className="flex w-full items-center justify-center gap-2 rounded-full bg-[#FAF7F2] border border-[#E0D8CC] py-2.5 text-xs font-bold text-[#1E1D1B] transition-colors hover:bg-[#F0EAE1] active:scale-95 shadow-2xs"
+              >
+                <Printer size={15} className="text-[#D97757]" /> Imprimir Notinha (Epson TM-T20X)
+              </button>
+            </div>
+            
             <p className="mt-3 text-center text-[10px] text-[#8E8578]">Envio direto para (97) 99155-4563 · retirada em loja</p>
           </div>
         )}
@@ -504,41 +579,101 @@ function matchesSmartQuery(product: Product, searchTokens: string[]): boolean {
 }
 
 export function App() {
-  const [productList, setProductList] = useState<Product[]>([]);
+  const [productList, setProductList] = useState<Product[]>(() => AdminStore.getProducts());
   const [loading, setLoading] = useState(false);
 
   const categories = useMemo(() => {
-    return categoryDefinitions.map(def => {
-      if (def.name === 'Todos') {
-        return { ...def, count: productList.length > 0 ? String(productList.length).padStart(2, '0') : undefined };
+    const baseNames = ['Todos', ...CATEGORIAS_VALIDAS];
+    const dynamicSet = new Set<string>(baseNames);
+    productList.forEach(p => {
+      if (p.category && typeof p.category === 'string' && p.category.trim() && p.category !== 'Todos') {
+        dynamicSet.add(p.category.trim());
       }
-      const count = productList.filter(p => p.category === def.name).length;
-      return { ...def, count: count > 0 ? String(count).padStart(2, '0') : undefined };
+    });
+
+    return Array.from(dynamicSet).map(catName => {
+      const icon = getCategoryIcon(catName);
+      if (catName === 'Todos') {
+        return {
+          name: catName,
+          icon,
+          count: productList.length > 0 ? String(productList.length).padStart(2, '0') : undefined
+        };
+      }
+      const count = productList.filter(p => p.category?.toLowerCase() === catName.toLowerCase()).length;
+      return {
+        name: catName,
+        icon,
+        count: count > 0 ? String(count).padStart(2, '0') : undefined
+      };
     });
   }, [productList]);
 
   useEffect(() => {
     async function loadSupabaseData() {
-      setLoading(true);
-      const dbProducts = await fetchProductsFromSupabase();
-      setProductList(dbProducts);
-      setLoading(false);
+      try {
+        const [dbProducts] = await Promise.all([
+          fetchProductsFromSupabase(),
+          AdminStore.loadSettingsFromCloud().catch(() => null)
+        ]);
+        if (Array.isArray(dbProducts) && dbProducts.length > 0) {
+          setProductList(dbProducts);
+          AdminStore.saveProducts(dbProducts);
+        }
+      } catch (err) {
+        console.warn('[App] Erro ao sincronizar dados iniciais:', err);
+      }
     }
     loadSupabaseData();
   }, []);
 
   const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false);
   const [isAdminLoginModalOpen, setIsAdminLoginModalOpen] = useState(false);
+  const [isSetPasswordModalOpen, setIsSetPasswordModalOpen] = useState(false);
   const [showAdminPanel, setShowAdminPanel] = useState(false);
   const [currentAdminUser, setCurrentAdminUser] = useState<AdminProfile | null>(null);
 
   useEffect(() => {
+    // 1. Carregar usuário inicial
     getSupabaseUser().then(profile => {
-      if (profile) {
+      if (profile && profile.is_active) {
         setCurrentAdminUser(profile);
         setIsAdminLoggedIn(true);
+      } else {
+        setCurrentAdminUser(null);
+        setIsAdminLoggedIn(false);
+        setShowAdminPanel(false);
       }
     });
+
+    // 2. Detectar se o usuário chegou por link de convite ou recuperação de senha
+    const hash = window.location.hash;
+    if (hash && (hash.includes('type=invite') || hash.includes('type=recovery') || hash.includes('access_token'))) {
+      setIsSetPasswordModalOpen(true);
+    }
+
+    // 3. Listener de mudanças de estado de autenticação em tempo real
+    if (!supabase) return;
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === 'PASSWORD_RECOVERY') {
+        setIsSetPasswordModalOpen(true);
+      } else if (event === 'SIGNED_IN' && session?.user) {
+        const profile = await getSupabaseUser();
+        if (profile && profile.is_active) {
+          setCurrentAdminUser(profile);
+          setIsAdminLoggedIn(true);
+        }
+      } else if (event === 'SIGNED_OUT') {
+        setCurrentAdminUser(null);
+        setIsAdminLoggedIn(false);
+        setShowAdminPanel(false);
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
   const [query, setQuery] = useState('');
@@ -550,11 +685,25 @@ export function App() {
   const [toast, setToast] = useState('');
   const [sort, setSort] = useState('Destaques');
   const [mobileFilters, setMobileFilters] = useState(false);
+  const [activeReceiptData, setActiveReceiptData] = useState<ReceiptData | null>(null);
+
+  // Solicitação de produtos para clientes
+  const [isProductRequestModalOpen, setIsProductRequestModalOpen] = useState(false);
+  const [productRequestInitialQuery, setProductRequestInitialQuery] = useState('');
+
+  const handleOpenProductRequest = (initialText: string = '') => {
+    setProductRequestInitialQuery(initialText || query);
+    setIsProductRequestModalOpen(true);
+  };
+
+  // Modal de Escolha de Cor (Capinhas & Variantes)
+  const [colorModalProduct, setColorModalProduct] = useState<Product | null>(null);
+  const [isColorModalOpen, setIsColorModalOpen] = useState(false);
 
   const filteredProducts = useMemo(() => {
     const rawTokens = normalizeText(query).split(/\s+/).filter(Boolean);
     const filtered = productList.filter((product) => {
-      const matchesCategory = category === 'Todos' || product.category === category;
+      const matchesCategory = category === 'Todos' || product.category?.toLowerCase() === category.toLowerCase();
       const matchesQuery = matchesSmartQuery(product, rawTokens);
       return matchesCategory && matchesQuery;
     });
@@ -573,15 +722,47 @@ export function App() {
   };
 
   const addToCart = (product: Product) => {
+    const isCaseOrHasColors = 
+      product.category?.toLowerCase().includes('capa') || 
+      (product.colors && product.colors.length > 0);
+
+    if (isCaseOrHasColors) {
+      setColorModalProduct(product);
+      setIsColorModalOpen(true);
+      return;
+    }
+
     setLines((current) => {
-      const found = current.find((line) => line.product.id === product.id);
-      return found ? current.map((line) => line.product.id === product.id ? { ...line, quantity: line.quantity + 1 } : line) : [...current, { product, quantity: 1 }];
+      const found = current.find((line) => line.product.id === product.id && !line.selectedColor);
+      return found 
+        ? current.map((line) => line.product.id === product.id && !line.selectedColor ? { ...line, quantity: line.quantity + 1 } : line) 
+        : [...current, { product, quantity: 1 }];
     });
     showToast(`${product.name} foi para a sacola`);
   };
 
-  const changeQuantity = (id: number, delta: number) => setLines((current) => current.flatMap((line) => line.product.id === id ? (line.quantity + delta > 0 ? [{ ...line, quantity: line.quantity + delta }] : []) : [line]));
-  const removeLine = (id: number) => setLines((current) => current.filter((line) => line.product.id !== id));
+  const handleAddToCartWithColor = (product: Product, color: string, quantity: number) => {
+    setLines((current) => {
+      const found = current.find((line) => line.product.id === product.id && line.selectedColor === color);
+      return found
+        ? current.map((line) => line.product.id === product.id && line.selectedColor === color ? { ...line, quantity: line.quantity + quantity } : line)
+        : [...current, { product, quantity, selectedColor: color }];
+    });
+    showToast(`${product.name} (${color}) adicionado à sacola! ✨`);
+  };
+
+  const changeQuantity = (lineIndex: number, delta: number) => {
+    setLines((current) => current.flatMap((line, idx) => {
+      if (idx === lineIndex) {
+        return line.quantity + delta > 0 ? [{ ...line, quantity: line.quantity + delta }] : [];
+      }
+      return [line];
+    }));
+  };
+
+  const removeLine = (lineIndex: number) => {
+    setLines((current) => current.filter((_, idx) => idx !== lineIndex));
+  };
   const jumpToCatalog = () => document.getElementById('catalogo')?.scrollIntoView({ behavior: 'smooth' });
 
   // CRUD handlers para o AdminPanel com sincronização Supabase
@@ -595,7 +776,16 @@ export function App() {
     };
     const updated = [fullProduct, ...productList];
     setProductList(updated);
+    AdminStore.saveProducts(updated);
     const synced = await syncProductsToSupabase([fullProduct]);
+    
+    // Registrar log humanizado
+    await logSecurityAction('PRODUCT_CREATED', 'products', {
+      product_name: fullProduct.name,
+      price: fullProduct.price,
+      category: fullProduct.category
+    }, currentAdminUser ? { name: currentAdminUser.name, role: currentAdminUser.role, email: currentAdminUser.email } : undefined);
+
     if (synced) {
       showToast(`Produto "${fullProduct.name}" cadastrado e salvo no banco! ✨`);
     } else {
@@ -606,7 +796,16 @@ export function App() {
   const handleEditProduct = async (updatedProd: Product) => {
     const updated = productList.map(p => p.id === updatedProd.id ? updatedProd : p);
     setProductList(updated);
+    AdminStore.saveProducts(updated);
     const synced = await syncProductsToSupabase([updatedProd]);
+
+    // Registrar log humanizado
+    await logSecurityAction('PRODUCT_UPDATED', 'products', {
+      product_name: updatedProd.name,
+      price: updatedProd.price,
+      category: updatedProd.category
+    }, currentAdminUser ? { name: currentAdminUser.name, role: currentAdminUser.role, email: currentAdminUser.email } : undefined);
+
     if (synced) {
       showToast(`Produto "${updatedProd.name}" atualizado no banco! ✨`);
     } else {
@@ -615,22 +814,34 @@ export function App() {
   };
 
   const handleDeleteProduct = async (id: number) => {
+    const deletedProduct = productList.find(p => p.id === id);
     const previous = [...productList];
     const updated = productList.filter(p => p.id !== id);
     setProductList(updated);
+    AdminStore.saveProducts(updated);
     const deleted = await deleteProductFromSupabase(id);
+
+    // Registrar log humanizado
+    await logSecurityAction('PRODUCT_DELETED', 'products', {
+      product_id: id,
+      product_name: deletedProduct?.name || `Produto #${id}`
+    }, currentAdminUser ? { name: currentAdminUser.name, role: currentAdminUser.role, email: currentAdminUser.email } : undefined);
+
     if (deleted) {
       showToast('Produto excluído com sucesso do banco de dados!');
     } else {
       setProductList(previous);
+      AdminStore.saveProducts(previous);
       showToast('Falha ao excluir produto no banco.');
     }
   };
 
   const handleOpenAdmin = () => {
-    if (isAdminLoggedIn) {
+    if (isAdminLoggedIn && currentAdminUser && currentAdminUser.is_active) {
       setShowAdminPanel(true);
+      setIsAdminLoginModalOpen(false);
     } else {
+      setShowAdminPanel(false);
       setIsAdminLoginModalOpen(true);
     }
   };
@@ -651,7 +862,7 @@ export function App() {
       window.removeEventListener('hashchange', checkNatalSecretRoute);
       window.removeEventListener('popstate', checkNatalSecretRoute);
     };
-  }, [isAdminLoggedIn]);
+  }, [isAdminLoggedIn, currentAdminUser]);
 
   return (
     <div id="topo" className="catalog-shell bg-[#FAF7F2] text-[#1E1D1B]">
@@ -661,8 +872,8 @@ export function App() {
         onCart={() => setCartOpen(true)}
       />
 
-      {/* Render Admin Panel or Public Catalog */}
-      {showAdminPanel && isAdminLoggedIn && currentAdminUser ? (
+      {/* Render Admin Panel ONLY when authenticated and active */}
+      {showAdminPanel && isAdminLoggedIn && currentAdminUser && currentAdminUser.is_active ? (
         <AdminPanel
           products={productList}
           currentUser={currentAdminUser}
@@ -675,6 +886,7 @@ export function App() {
             setIsAdminLoggedIn(false);
             setCurrentAdminUser(null);
             setShowAdminPanel(false);
+            setIsAdminLoginModalOpen(false);
             showToast('Sessão encerrada com sucesso');
           }}
         />
@@ -853,7 +1065,7 @@ export function App() {
                 </div>
               </div>
 
-              <div className="mb-7 flex items-center justify-between gap-3">
+              <div className="mb-7 flex items-center justify-between gap-3 flex-wrap">
                 <button 
                   type="button" 
                   onClick={() => setMobileFilters(!mobileFilters)} 
@@ -862,9 +1074,19 @@ export function App() {
                 >
                   <Menu size={14} /> Filtros {category !== 'Todos' && <span className="h-1.5 w-1.5 rounded-full bg-[#D97757]" />}
                 </button>
-                <p className="text-xs text-[#736B60]">
-                  <strong className="text-[#1E1D1B]">{filteredProducts.length}</strong> produtos encontrados
-                </p>
+                <div className="flex items-center gap-4">
+                  <p className="text-xs text-[#736B60]">
+                    <strong className="text-[#1E1D1B]">{filteredProducts.length}</strong> produtos encontrados
+                  </p>
+                  <button 
+                    type="button" 
+                    onClick={() => handleOpenProductRequest()} 
+                    className="flex items-center gap-1.5 text-xs font-bold text-[#D97757] hover:text-[#B05330] transition-colors cursor-pointer"
+                  >
+                    <Sparkles size={13} />
+                    <span>Não achou seu produto? Peça aqui</span>
+                  </button>
+                </div>
                 <span className="hidden items-center gap-1.5 text-[10px] uppercase tracking-[.1em] text-[#7A7266] sm:flex">
                   <ShieldCheck size={13} className="text-[#D97757]" /> Seleção Lucca Cell
                 </span>
@@ -949,20 +1171,41 @@ export function App() {
                       ))}
                     </div>
                   ) : (
-                    <div className="flex min-h-[330px] flex-col items-center justify-center rounded-[20px] border border-dashed border-[#DED6CA] bg-[#FFFFFF] px-6 text-center shadow-xs">
-                      <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-[#FAF5EF] border border-[#F0E5D8] text-[#D97757]">
-                        <Search size={22} />
+                    <div className="flex min-h-[350px] flex-col items-center justify-center rounded-[24px] border border-dashed border-[#DED6CA] bg-[#FFFFFF] p-8 text-center shadow-xs animate-fadeIn">
+                      <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-[#FAF4ED] border border-[#F0E5D8] text-[#D97757]">
+                        <Search size={24} />
                       </div>
-                      <h3 className="display text-[23px] text-[#1E1D1B]">Nenhum produto encontrado</h3>
-                      <p className="mt-2 max-w-[340px] text-xs leading-relaxed text-[#736B60]">Tente outros termos ou limpe os filtros aplicados.</p>
-                      <button 
-                        type="button" 
-                        onClick={() => { setQuery(''); setCategory('Todos'); }} 
-                        data-testid="button-clear-filters" 
-                        className="mt-5 rounded-full bg-[#D97757] px-5 py-2.5 text-xs font-bold text-[#FFFFFF] hover:bg-[#C85A32] shadow-xs"
-                      >
-                        Limpar filtros
-                      </button>
+                      <h3 className="display text-[22px] font-bold text-[#1E1D1B]">Nenhum produto encontrado</h3>
+                      <p className="mt-2 max-w-[380px] text-xs leading-relaxed text-[#736B60]">
+                        {query ? (
+                          <>
+                            Não encontrou <strong className="text-[#1E1D1B] font-bold">&ldquo;{query}&rdquo;</strong> no estoque atual? Nossa equipe busca com os fornecedores para você!
+                          </>
+                        ) : (
+                          'Tente buscar com outros termos ou limpe os filtros selecionados.'
+                        )}
+                      </p>
+                      
+                      <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+                        <button 
+                          type="button" 
+                          onClick={() => handleOpenProductRequest(query)} 
+                          data-testid="button-request-product-empty" 
+                          className="flex items-center gap-2 rounded-full bg-gradient-to-r from-[#D97757] to-[#C85A32] px-6 py-3 text-xs font-extrabold text-[#FFFFFF] hover:opacity-95 shadow-sm transition-all hover:scale-[1.02] cursor-pointer"
+                        >
+                          <Sparkles size={15} />
+                          Pedir o produto que você quer
+                        </button>
+
+                        <button 
+                          type="button" 
+                          onClick={() => { setQuery(''); setCategory('Todos'); }} 
+                          data-testid="button-clear-filters" 
+                          className="rounded-full border border-[#DED6CA] bg-[#FAF8F5] px-5 py-3 text-xs font-bold text-[#6E675D] hover:bg-[#F2ECE4] hover:text-[#1E1D1B] transition-colors cursor-pointer"
+                        >
+                          Limpar filtros
+                        </button>
+                      </div>
                     </div>
                   )}
 
@@ -1096,18 +1339,71 @@ export function App() {
         isFavorite={selectedProduct ? favorites.includes(selectedProduct.id) : false}
       />
 
-      <CartDrawer open={cartOpen} lines={lines} onClose={() => setCartOpen(false)} onQuantity={changeQuantity} onRemove={removeLine} />
+      <CartDrawer 
+        open={cartOpen} 
+        lines={lines} 
+        onClose={() => setCartOpen(false)} 
+        onQuantity={changeQuantity} 
+        onRemove={removeLine}
+        onOpenReceipt={setActiveReceiptData}
+      />
+
+      {/* Modal de Notinha Térmica Epson TM-T20X */}
+      <ThermalReceiptModal
+        isOpen={Boolean(activeReceiptData)}
+        onClose={() => setActiveReceiptData(null)}
+        receiptData={activeReceiptData}
+      />
 
       {/* Admin Auth Modal (Login + Criar Conta) */}
       <AdminAuthModal
         isOpen={isAdminLoginModalOpen}
-        onClose={() => setIsAdminLoginModalOpen(false)}
+        onClose={() => {
+          setIsAdminLoginModalOpen(false);
+          if (!isAdminLoggedIn || !currentAdminUser) {
+            setShowAdminPanel(false);
+          }
+        }}
         onLoginSuccess={(profile) => {
           setCurrentAdminUser(profile);
           setIsAdminLoggedIn(true);
           setIsAdminLoginModalOpen(false);
           setShowAdminPanel(true);
           showToast(`Bem-vindo, ${profile.name.split(' ')[0]} (${profile.role.toUpperCase()})!`);
+        }}
+      />
+
+      {/* Modal de Criação / Definição de Senha para Convidado */}
+      <AdminSetPasswordModal
+        isOpen={isSetPasswordModalOpen}
+        onClose={() => setIsSetPasswordModalOpen(false)}
+        onPasswordSetSuccess={(profile) => {
+          setCurrentAdminUser(profile);
+          setIsAdminLoggedIn(true);
+          setIsSetPasswordModalOpen(false);
+          setShowAdminPanel(true);
+          showToast(`Senha criada com sucesso! Bem-vindo à equipe, ${profile.name}! ✨`);
+        }}
+      />
+
+      {/* Modal de Escolha de Cor para Capinhas e Variantes */}
+      <ProductColorModal
+        isOpen={isColorModalOpen}
+        product={colorModalProduct}
+        onClose={() => {
+          setIsColorModalOpen(false);
+          setColorModalProduct(null);
+        }}
+        onAddToCartWithColor={handleAddToCartWithColor}
+      />
+
+      {/* Modal de Solicitação de Produtos para Clientes */}
+      <ProductRequestModal
+        isOpen={isProductRequestModalOpen}
+        onClose={() => setIsProductRequestModalOpen(false)}
+        initialProductName={productRequestInitialQuery}
+        onRequestSubmitted={() => {
+          showToast('Solicitação enviada com sucesso! Entraremos em contato.');
         }}
       />
     </div>

@@ -89,10 +89,24 @@
 
 @layer base {
   * { @apply border-border; }
-  html { scroll-behavior: smooth; color-scheme: light; }
+  html {
+    scroll-behavior: smooth;
+    color-scheme: light;
+    -webkit-text-size-adjust: 100%;
+    touch-action: manipulation;
+  }
   body { @apply font-sans antialiased bg-[#FAF7F2] text-[#1E1D1B]; margin: 0; }
   button, input { font: inherit; }
   button { cursor: pointer; }
+
+  /* Impede zoom automático do iOS e mobile ao focar em inputs */
+  @media screen and (max-width: 768px) {
+    input,
+    select,
+    textarea {
+      font-size: 16px !important;
+    }
+  }
 }
 
 @keyframes rise-in {

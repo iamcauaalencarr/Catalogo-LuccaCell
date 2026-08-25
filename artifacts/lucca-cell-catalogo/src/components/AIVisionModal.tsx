@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
-import { Sparkles, Upload, Camera, X, CheckCircle2, AlertCircle, RefreshCw, Zap, AlertTriangle, Eye, ShieldAlert } from 'lucide-react';
-import { analyzeProductImage, ScannedProductData } from '@/services/openrouter';
+import { Sparkles, Upload, Camera, X, CheckCircle2, AlertCircle, RefreshCw, Zap, AlertTriangle, Eye, ShieldAlert, Cpu } from 'lucide-react';
+import { analyzeProductImage, ScannedProductData, getSelectedOpenRouterModel } from '@/services/openrouter';
 
 interface AIVisionModalProps {
   isOpen: boolean;
@@ -70,14 +70,18 @@ export function AIVisionModal({ isOpen, onClose, onApplyAIData }: AIVisionModalP
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
+  const handleModalClose = () => {
+    handleReset();
+    onClose();
+  };
+
   const handleConfirmAndApply = () => {
     if (scannedResult) {
       onApplyAIData({
         ...scannedResult,
         image: selectedImage || scannedResult.image
       });
-      onClose();
-      handleReset();
+      handleModalClose();
     }
   };
 
@@ -96,7 +100,7 @@ export function AIVisionModal({ isOpen, onClose, onApplyAIData }: AIVisionModalP
     <>
       <div 
         className="fixed inset-0 z-50 bg-[#171411]/80 backdrop-blur-md transition-opacity"
-        onClick={onClose}
+        onClick={handleModalClose}
       />
 
       <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
@@ -115,7 +119,7 @@ export function AIVisionModal({ isOpen, onClose, onApplyAIData }: AIVisionModalP
           {/* Close button */}
           <button
             type="button"
-            onClick={onClose}
+            onClick={handleModalClose}
             className="absolute right-4 top-5 flex h-9 w-9 items-center justify-center rounded-full border border-[#45382c] text-[#bcae98] hover:bg-[#2b241e] hover:text-white transition-colors"
           >
             <X size={18} />
@@ -129,9 +133,14 @@ export function AIVisionModal({ isOpen, onClose, onApplyAIData }: AIVisionModalP
                 <Sparkles size={24} />
               </div>
               <div>
-                <span className="text-[10px] font-extrabold uppercase tracking-[.14em] text-[#d7ad55]">
-                  IA Multimodal · OpenRouter
-                </span>
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <span className="text-[10px] font-extrabold uppercase tracking-[.14em] text-[#d7ad55]">
+                    IA Multimodal
+                  </span>
+                  <span className="rounded bg-[#171411] border border-[#67502d] px-1.5 py-0.2 text-[9px] font-mono text-[#f4b52e] flex items-center gap-1">
+                    <Cpu size={9} /> {getSelectedOpenRouterModel()}
+                  </span>
+                </div>
                 <h2 className="display text-[22px] font-semibold leading-tight text-[#fff4dc]">
                   Cadastrar Produto por Foto
                 </h2>
@@ -280,6 +289,18 @@ export function AIVisionModal({ isOpen, onClose, onApplyAIData }: AIVisionModalP
                       </div>
                     )}
 
+                    {/* Modelo Real Utilizado (Comprovação) */}
+                    {scannedResult.modelUsed && (
+                      <div className="border-t border-[#45382c] pt-2 mt-1 flex items-center justify-between text-[11px]">
+                        <span className="text-[#8d7e6d] flex items-center gap-1">
+                          <Cpu size={12} className="text-[#f4b52e]" /> Modelo que processou:
+                        </span>
+                        <code className="rounded bg-[#171411] border border-[#22c55e]/40 px-2 py-0.5 text-[10px] font-mono text-[#4ade80] flex items-center gap-1">
+                          <CheckCircle2 size={10} /> {scannedResult.modelUsed}
+                        </code>
+                      </div>
+                    )}
+
                     {/* Alertas */}
                     {scannedResult.alertas.length > 0 && (
                       <div className="border-t border-[#45382c] pt-2 mt-1 space-y-1">
@@ -327,7 +348,7 @@ export function AIVisionModal({ isOpen, onClose, onApplyAIData }: AIVisionModalP
             <div className="flex items-center gap-3">
               <button
                 type="button"
-                onClick={onClose}
+                onClick={handleModalClose}
                 className="rounded-full border border-[#69543c] px-4 py-2 text-xs font-bold text-[#e8d9bf] hover:border-[#eab23d]"
               >
                 Cancelar
