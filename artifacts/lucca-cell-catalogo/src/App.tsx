@@ -15,10 +15,28 @@ import { signOutAdminFromSupabase, getSupabaseUser, AdminProfile, logSecurityAct
 import { CATEGORIAS_VALIDAS } from '@/services/openrouter';
 import { AdminStore } from '@/services/adminStore';
 import { NotFoundPage } from '@/components/NotFoundPage';
+import { 
+  CartLine, 
+  formatCurrency, 
+  addOrIncrementItem, 
+  updateItemQuantity, 
+  removeItem, 
+  calculateCartTotals, 
+  buildWhatsAppOrderMessage, 
+  buildThermalReceiptPayload 
+} from '@/lib/functional/cart';
+import { 
+  filterAndSortProducts, 
+  extractUniqueCategories, 
+  matchesSmartQuery, 
+  normalizeText, 
+  SMART_SYNONYMS 
+} from '@/lib/functional/search';
+import { validateProductInput } from '@/lib/functional/validation';
 
 const queryClient = new QueryClient();
 
-type CartLine = { product: Product; quantity: number; selectedColor?: string };
+const formatPrice = formatCurrency;
 
 function getCategoryIcon(categoryName: string): LucideIcon {
   const lower = categoryName.toLowerCase();
@@ -37,10 +55,6 @@ function getCategoryIcon(categoryName: string): LucideIcon {
   if (lower.includes('laptop') || lower.includes('computador') || lower.includes('notebook')) return Laptop;
   return Tag;
 }
-
-
-
-const formatPrice = (value: number) => value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
 import { LazyImage } from '@/components/ui/lazy-image';
 import { Skeleton, ProductCardSkeleton } from '@/components/ui/skeleton';
@@ -370,43 +384,20 @@ function CartDrawer({
   onRemove: (index: number) => void;
   onOpenReceipt: (data: ReceiptData) => void;
 }) {
-  const subtotal = lines.reduce((sum, line) => sum + line.product.price * line.quantity, 0);
-  
-  const createReceiptPayload = (): ReceiptData => ({
-    orderNumber: `LC-${Math.floor(1000 + Math.random() * 9000)}`,
-    date: new Date().toLocaleDateString('pt-BR') + ' ' + new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
-    customerName: 'Cliente Balcão / WhatsApp',
-    items: lines.map(l => ({
-      name: l.product.name,
-      quantity: l.quantity,
-      price: l.product.price,
-      color: l.selectedColor
-    })),
-    subtotal,
-    deliveryFee: 0,
-    discount: 0,
-    total: subtotal,
-    paymentMethod: 'A Combinar / Pix',
-    isPickup: true
-  });
+  const totals = calculateCartTotals(lines);
 
   const handleFinishWhatsAppOrder = () => {
+    const text = buildWhatsAppOrderMessage(lines, totals);
     const phone = '5597991554563';
-    let text = `Olá, Lucca Cell! Gostaria de fazer o pedido pelo catálogo:\n\n`;
-    lines.forEach(l => {
-      const colorText = l.selectedColor ? ` (Cor: *${l.selectedColor}*)` : '';
-      text += `• ${l.quantity}x ${l.product.name}${colorText} - ${formatPrice(l.product.price * l.quantity)}\n`;
-    });
-    text += `\n*Total: ${formatPrice(subtotal)}*\nRetirada na loja em Guajará - AM.`;
     const url = `https://wa.me/${phone}?text=${encodeURIComponent(text)}`;
     window.open(url, '_blank');
     
-    // Abre a notinha térmica
-    onOpenReceipt(createReceiptPayload());
+    // Abre a notinha térmica estruturada
+    onOpenReceipt(buildThermalReceiptPayload(lines, totals));
   };
 
   const handleOpenDirectReceipt = () => {
-    onOpenReceipt(createReceiptPayload());
+    onOpenReceipt(buildThermalReceiptPayload(lines, totals));
   };
 
   return (
@@ -469,7 +460,7 @@ function CartDrawer({
           <div className="border-t border-[#EAE3D8] bg-[#FAF8F5] px-6 pb-7 pt-5">
             <div className="mb-2 flex justify-between text-xs text-[#6E675D]">
               <span>Subtotal</span>
-              <strong className="text-[#1E1D1B] text-sm">{formatPrice(subtotal)}</strong>
+              <strong className="text-[#1E1D1B] text-sm">{formatPrice(totals.subtotal)}</strong>
             </div>
             <div className="mb-5 flex justify-between text-xs text-[#6E675D]">
               <span>Retirada</span>
@@ -510,89 +501,14 @@ import {
   deleteProductFromSupabase 
 } from '@/lib/supabase';
 
-// Funções para a Busca Inteligente
-function normalizeText(text: string): string {
-  return (text || '')
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^a-z0-9\s]/g, ' ')
-    .trim();
-}
-
-const SMART_SYNONYMS: Record<string, string[]> = {
-  capa: ['capinha', 'capinhas', 'case', 'cover', 'silicone', 'magsafe', 'couro'],
-  capas: ['capinha', 'capinhas', 'case', 'cover', 'silicone'],
-  capinha: ['capa', 'capinhas', 'case', 'cover', 'silicone', 'magsafe'],
-  capinhas: ['capa', 'capinha', 'case', 'cover', 'silicone', 'magsafe'],
-  case: ['capa', 'capinha', 'capinhas', 'cover'],
-  cabo: ['cabos', 'carregador', 'carregadores', 'usb', 'usbc', 'lightning', 'fonte', 'tomada', 'turbo', 'tipo-c'],
-  cabos: ['cabo', 'carregador', 'carregadores', 'usb', 'lightning', 'fonte', 'tomada'],
-  carregador: ['cabo', 'cabos', 'fonte', 'tomada', 'turbo', 'inducao', 'magsafe', 'powerbank', 'bateria'],
-  carregadores: ['cabo', 'cabos', 'fonte', 'tomada', 'turbo', 'inducao', 'powerbank'],
-  fonte: ['carregador', 'carregadores', 'tomada', 'turbo', 'cabo'],
-  fone: ['fones', 'audio', 'headphone', 'headset', 'earphone', 'airpod', 'airpods', 'bluetooth', 'som', 'sem fio'],
-  fones: ['fone', 'audio', 'headphone', 'headset', 'airpods', 'bluetooth', 'som'],
-  som: ['audio', 'fone', 'fones', 'caixa'],
-  audio: ['fone', 'fones', 'headphone', 'headset', 'som'],
-  pelicula: ['peliculas', 'protecao', 'vidro', '3d', 'privacidade', 'ceramica', 'camera', 'lente'],
-  peliculas: ['pelicula', 'protecao', 'vidro', '3d', 'privacidade', 'ceramica'],
-  protecao: ['pelicula', 'peliculas', 'vidro', 'blindagem', 'lente', 'camera'],
-  tela: ['assistencia', 'display', 'touch', 'troca', 'conserto', 'reparo', 'vidro'],
-  bateria: ['assistencia', 'troca', 'conserto', 'reparo', 'saude', 'carregamento'],
-  conserto: ['assistencia', 'reparo', 'manutencao', 'tecnica', 'troca', 'orcamento'],
-  reparo: ['assistencia', 'conserto', 'manutencao', 'tecnica', 'troca'],
-  assistencia: ['conserto', 'reparo', 'manutencao', 'troca', 'tela', 'bateria', 'servico'],
-  iphone: ['apple', 'ios', '11', '12', '13', '14', '15', '16', '17', 'pro', 'max', 'plus'],
-  samsung: ['galaxy', 'android', 'a14', 'a15', 'a54', 'a55', 's23', 's24', 'ultra'],
-  xiaomi: ['redmi', 'poco', 'note', 'pro']
-};
-
-function matchesSmartQuery(product: Product, searchTokens: string[]): boolean {
-  if (searchTokens.length === 0) return true;
-
-  const productSearchCorpus = normalizeText(
-    `${product.name} ${product.category} ${product.description} ${product.tag || ''} ${product.visual}`
-  );
-
-  return searchTokens.every(token => {
-    // 1. Verificação direta do termo ou prefixo
-    if (productSearchCorpus.includes(token)) return true;
-
-    // 2. Verificação por sinônimos inteligentes
-    const synonyms = SMART_SYNONYMS[token] || [];
-    for (const syn of synonyms) {
-      if (productSearchCorpus.includes(syn)) return true;
-    }
-
-    // 3. Verificação aproximada (tolerância de digitação para termos com mais de 3 letras)
-    if (token.length >= 4) {
-      const wordsInProduct = productSearchCorpus.split(/\s+/);
-      const isFuzzyMatch = wordsInProduct.some(w => {
-        if (Math.abs(w.length - token.length) > 2) return false;
-        return w.startsWith(token.slice(0, -1)) || token.startsWith(w.slice(0, -1));
-      });
-      if (isFuzzyMatch) return true;
-    }
-
-    return false;
-  });
-}
-
 export function App() {
   const [productList, setProductList] = useState<Product[]>(() => AdminStore.getProducts());
   const [loading, setLoading] = useState(false);
 
   const categories = useMemo(() => {
-    const baseNames = ['Todos', ...CATEGORIAS_VALIDAS];
-    const dynamicSet = new Set<string>(baseNames);
-    productList.forEach(p => {
-      if (p.category && typeof p.category === 'string' && p.category.trim() && p.category !== 'Todos') {
-        dynamicSet.add(p.category.trim());
-      }
-    });
+    const uniqueCategoryNames = extractUniqueCategories(productList);
 
-    return Array.from(dynamicSet).map(catName => {
+    return uniqueCategoryNames.map(catName => {
       const icon = getCategoryIcon(catName);
       if (catName === 'Todos') {
         return {
@@ -702,18 +618,10 @@ export function App() {
   const [isColorModalOpen, setIsColorModalOpen] = useState(false);
 
   const filteredProducts = useMemo(() => {
-    const rawTokens = normalizeText(query).split(/\s+/).filter(Boolean);
-    const filtered = productList.filter((product) => {
-      const matchesCategory = category === 'Todos' || product.category?.toLowerCase() === category.toLowerCase();
-      const matchesQuery = matchesSmartQuery(product, rawTokens);
-      return matchesCategory && matchesQuery;
-    });
-    if (sort === 'Menor preço') return [...filtered].sort((a, b) => a.price - b.price);
-    if (sort === 'Maior avaliação') return [...filtered].sort((a, b) => b.rating - a.rating);
-    return filtered;
+    return filterAndSortProducts(productList, { category, query, sort });
   }, [category, query, sort, productList]);
 
-  const cartCount = lines.reduce((sum, line) => sum + line.quantity, 0);
+  const cartCount = calculateCartTotals(lines).itemCount;
   const showToast = (message: string) => { setToast(message); window.setTimeout(() => setToast(''), 2400); };
   
   const toggleFavorite = (id: number) => {
@@ -733,36 +641,21 @@ export function App() {
       return;
     }
 
-    setLines((current) => {
-      const found = current.find((line) => line.product.id === product.id && !line.selectedColor);
-      return found 
-        ? current.map((line) => line.product.id === product.id && !line.selectedColor ? { ...line, quantity: line.quantity + 1 } : line) 
-        : [...current, { product, quantity: 1 }];
-    });
+    setLines((current) => addOrIncrementItem(current, product));
     showToast(`${product.name} foi para a sacola`);
   };
 
   const handleAddToCartWithColor = (product: Product, color: string, quantity: number) => {
-    setLines((current) => {
-      const found = current.find((line) => line.product.id === product.id && line.selectedColor === color);
-      return found
-        ? current.map((line) => line.product.id === product.id && line.selectedColor === color ? { ...line, quantity: line.quantity + quantity } : line)
-        : [...current, { product, quantity, selectedColor: color }];
-    });
+    setLines((current) => addOrIncrementItem(current, product, color, quantity));
     showToast(`${product.name} (${color}) adicionado à sacola! ✨`);
   };
 
   const changeQuantity = (lineIndex: number, delta: number) => {
-    setLines((current) => current.flatMap((line, idx) => {
-      if (idx === lineIndex) {
-        return line.quantity + delta > 0 ? [{ ...line, quantity: line.quantity + delta }] : [];
-      }
-      return [line];
-    }));
+    setLines((current) => updateItemQuantity(current, lineIndex, delta));
   };
 
   const removeLine = (lineIndex: number) => {
-    setLines((current) => current.filter((_, idx) => idx !== lineIndex));
+    setLines((current) => removeItem(current, lineIndex));
   };
   const jumpToCatalog = () => document.getElementById('catalogo')?.scrollIntoView({ behavior: 'smooth' });
 
