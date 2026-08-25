@@ -120,31 +120,21 @@ export function NotFoundPage({ onGoHome }: NotFoundPageProps) {
               {/* Notch */}
               <div className="h-1 w-6 rounded-full bg-[#E5DDD0]" />
 
-              {/* Tela com ícone quebrado/animado */}
-              <div className="relative flex flex-1 w-full flex-col items-center justify-center overflow-hidden rounded-[14px] bg-[#FAF7F2] border border-[#EFE8DC] p-1 my-1">
+              {/* Tela com ícone animado */}
+              <div className="relative flex flex-1 w-full flex-col items-center justify-center rounded-[14px] bg-[#FAF7F2] border border-[#EFE8DC] p-1 my-1">
                 <motion.div
                   animate={{
-                    scale: [1, 1.15, 1],
-                    opacity: [0.8, 1, 0.8],
+                    scale: [1, 1.12, 1],
                   }}
                   transition={{
-                    duration: 2.5,
+                    duration: 3,
                     repeat: Infinity,
                     ease: 'easeInOut',
                   }}
-                  className="flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-full bg-[#FAF2EB] border border-[#F3D7C9] text-[#D97757]"
+                  className="flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-full bg-[#FAF2EB] border border-[#F3D7C9] text-[#D97757] shadow-2xs"
                 >
                   <Smartphone size={22} className="sm:hidden" />
                   <Smartphone size={26} className="hidden sm:block" />
-                </motion.div>
-                
-                {/* Faísca de conserto / assistência */}
-                <motion.div
-                  animate={{ rotate: 360 }}
-                  transition={{ duration: 10, repeat: Infinity, ease: 'linear' }}
-                  className="absolute -top-1 -right-1 text-[#D48825]"
-                >
-                  <Sparkles size={14} />
                 </motion.div>
               </div>
 
