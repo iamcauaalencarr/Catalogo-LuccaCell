@@ -37,6 +37,22 @@ export function SettingsSection({
   const [formData, setFormData] = useState<StoreSettings>({ ...settings });
   const [savedSuccess, setSavedSuccess] = useState(false);
 
+  // Ouve mudanças de modelo em tempo real para sincronizar o formulário
+  React.useEffect(() => {
+    const handleModelChange = (e: any) => {
+      const model = e.detail || getSelectedOpenRouterModel();
+      setFormData(prev => ({
+        ...prev,
+        aiConfig: {
+          ...prev.aiConfig,
+          defaultModel: model
+        }
+      }));
+    };
+    window.addEventListener('lc_ai_model_changed', handleModelChange);
+    return () => window.removeEventListener('lc_ai_model_changed', handleModelChange);
+  }, []);
+
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
     if (formData.aiConfig?.defaultModel) {
@@ -430,7 +446,10 @@ export function SettingsSection({
                     <button
                       key={modelId}
                       type="button"
-                      onClick={() => setFormData({ ...formData, aiConfig: { ...formData.aiConfig, defaultModel: modelId } })}
+                      onClick={() => {
+                        setFormData({ ...formData, aiConfig: { ...formData.aiConfig, defaultModel: modelId } });
+                        setSelectedOpenRouterModel(modelId);
+                      }}
                       className={`p-3 rounded-2xl text-left border transition-all flex items-start justify-between gap-2 ${
                         isSelected 
                           ? 'border-[#D97757] bg-[#FAF0E8] shadow-2xs' 

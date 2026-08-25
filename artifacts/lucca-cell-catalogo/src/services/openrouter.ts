@@ -508,27 +508,27 @@ async function callOpenRouterDirect(imageBase64: string): Promise<Record<string,
   }
 
   if (response.status === 402 || response.status === 404) {
-    if (selectedModel !== 'nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free') {
-      console.warn(`[OpenRouter] Modelo ${selectedModel} retornou ${response.status}. Alternando automaticamente para NVIDIA Nemotron Free Vision...`);
-      setSelectedOpenRouterModel('nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free');
-      return callOpenRouterDirect(imageBase64);
-    }
-    throw new Error(`O modelo "${selectedModel}" é pago ou indisponível (${response.status}). Escolha um modelo gratuito com ":free" no Painel.`);
+    throw new Error(`O modelo "${selectedModel}" requer saldo/créditos ou está temporariamente indisponível no OpenRouter (Status ${response.status}).`);
   } else if (response.status === 401) {
-    throw new Error('Chave de API OpenRouter inválida ou não autorizada (401 Unauthorized).');
+    throw new Error('Chave de API OpenRouter não autorizada (401 Unauthorized). Verifique suas chaves de API.');
   } else if (response.status === 429) {
-    throw new Error(`Limite temporário de requisições excedido para o modelo "${selectedModel}" (429 Rate Limit). Aguarde alguns instantes.`);
+    throw new Error(`Limite de requisições excedido para o modelo "${selectedModel}" (429 Rate Limit). Aguarde alguns segundos.`);
   } else {
     let errMsg = rawResponseText;
     try {
       const parsedErr = JSON.parse(rawResponseText);
       errMsg = parsedErr?.error?.message || rawResponseText;
     } catch {}
-    throw new Error(`Erro na análise (${response.status}): ${errMsg}`);
+    throw new Error(`Erro na análise com o modelo "${selectedModel}" (${response.status}): ${errMsg}`);
   }
 }
 
 async function callClaudeDirect(imageBase64: string): Promise<Record<string, any>> {
+  if (!ANTHROPIC_API_KEY) {
+    // Se não tiver chave direta Anthropic, executa pelo OpenRouter
+    return callOpenRouterDirect(imageBase64);
+  }
+
   const { customInstructions } = getAiSettings();
   const effectivePrompt = customInstructions
     ? `${VISION_PROMPT}\n\n[INSTRUÇÕES ADICIONAIS DA LOJA]:\n${customInstructions}`
@@ -544,64 +544,58 @@ async function callClaudeDirect(imageBase64: string): Promise<Record<string, any
     ? imageBase64.split('base64,')[1]
     : imageBase64;
 
-  try {
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': ANTHROPIC_API_KEY,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true',
-      },
-      body: JSON.stringify({
-        model: 'claude-3-5-haiku-20241022',
-        max_tokens: 1000,
-        messages: [
-          {
-            role: 'user',
-            content: [
-              {
-                type: 'image',
-                source: {
-                  type: 'base64',
-                  media_type: mimeType,
-                  data: cleanBase64,
-                },
+  const response = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': ANTHROPIC_API_KEY,
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-access': 'true',
+    },
+    body: JSON.stringify({
+      model: 'claude-3-5-haiku-20241022',
+      max_tokens: 1000,
+      messages: [
+        {
+          role: 'user',
+          content: [
+            {
+              type: 'image',
+              source: {
+                type: 'base64',
+                media_type: mimeType,
+                data: cleanBase64,
               },
-              {
-                type: 'text',
-                text: effectivePrompt,
-              },
-            ],
-          },
-        ],
-      }),
-    });
+            },
+            {
+              type: 'text',
+              text: effectivePrompt,
+            },
+          ],
+        },
+      ],
+    }),
+  });
 
-    const rawText = await response.text();
-    if (response.ok) {
-      const data = JSON.parse(rawText);
-      const contentText = data?.content?.[0]?.text || '';
-      const cleaned = contentText.replace(/```json\s*/gi, '').replace(/```\s*$/gi, '').trim();
-      let parsedJson = null;
-      try {
-        parsedJson = JSON.parse(cleaned);
-      } catch {
-        const match = cleaned.match(/\{[\s\S]*\}/);
-        if (match) parsedJson = JSON.parse(match[0]);
-      }
-      if (parsedJson && typeof parsedJson === 'object') {
-        parsedJson._modelUsed = 'Anthropic Claude 3.5 Haiku';
-        return parsedJson;
-      }
+  const rawText = await response.text();
+  if (response.ok) {
+    const data = JSON.parse(rawText);
+    const contentText = data?.content?.[0]?.text || '';
+    const cleaned = contentText.replace(/```json\s*/gi, '').replace(/```\s*$/gi, '').trim();
+    let parsedJson = null;
+    try {
+      parsedJson = JSON.parse(cleaned);
+    } catch {
+      const match = cleaned.match(/\{[\s\S]*\}/);
+      if (match) parsedJson = JSON.parse(match[0]);
     }
-    console.warn('[Claude] API Claude retornou status ' + response.status + '. Alternando para NVIDIA Nemotron Free Vision...');
-  } catch (err) {
-    console.warn('[Claude] Falha na chamada Claude. Alternando para NVIDIA Nemotron Free Vision...', err);
+    if (parsedJson && typeof parsedJson === 'object') {
+      parsedJson._modelUsed = 'Anthropic Claude 3.5 Haiku';
+      return parsedJson;
+    }
   }
 
-  // Fallback transparente para o NVIDIA Free
-  return callOpenRouterDirect(imageBase64);
+  throw new Error(`Erro na API Anthropic Claude (${response.status}): ${rawText.slice(0, 150)}`);
 }
 
 // ─────────────────────────────────────────────────────────────
