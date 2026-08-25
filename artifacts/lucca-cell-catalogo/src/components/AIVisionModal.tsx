@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { Sparkles, Upload, Camera, X, CheckCircle2, AlertCircle, RefreshCw, Zap, AlertTriangle, Eye, ShieldAlert, Cpu } from 'lucide-react';
-import { analyzeProductImage, ScannedProductData, getSelectedOpenRouterModel } from '@/services/openrouter';
+import { analyzeProductImage, ScannedProductData, getSelectedOpenRouterModel, getModelDisplayName } from '@/services/openrouter';
 
 interface AIVisionModalProps {
   isOpen: boolean;
@@ -9,10 +9,22 @@ interface AIVisionModalProps {
 }
 
 export function AIVisionModal({ isOpen, onClose, onApplyAIData }: AIVisionModalProps) {
+  const [activeModel, setActiveModel] = useState<string>(() => getSelectedOpenRouterModel());
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [scannedResult, setScannedResult] = useState<ScannedProductData | null>(null);
+
+  React.useEffect(() => {
+    if (isOpen) {
+      setActiveModel(getSelectedOpenRouterModel());
+    }
+    const handleModelChange = (e: any) => {
+      setActiveModel(e.detail || getSelectedOpenRouterModel());
+    };
+    window.addEventListener('lc_ai_model_changed', handleModelChange);
+    return () => window.removeEventListener('lc_ai_model_changed', handleModelChange);
+  }, [isOpen]);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -137,8 +149,8 @@ export function AIVisionModal({ isOpen, onClose, onApplyAIData }: AIVisionModalP
                   <span className="text-[10px] font-extrabold uppercase tracking-[.14em] text-[#d7ad55]">
                     IA Multimodal
                   </span>
-                  <span className="rounded bg-[#171411] border border-[#67502d] px-1.5 py-0.2 text-[9px] font-mono text-[#f4b52e] flex items-center gap-1">
-                    <Cpu size={9} /> {getSelectedOpenRouterModel()}
+                  <span className="rounded-full bg-[#171411] border border-[#67502d] px-2 py-0.5 text-[10px] font-bold text-[#f4b52e] flex items-center gap-1.5 shadow-2xs" title={activeModel}>
+                    <Cpu size={11} className="text-[#d7ad55]" /> {getModelDisplayName(activeModel)}
                   </span>
                 </div>
                 <h2 className="display text-[22px] font-semibold leading-tight text-[#fff4dc]">

@@ -14,7 +14,13 @@ import {
   RotateCcw
 } from 'lucide-react';
 import { StoreSettings, DynamicCategory } from '@/types/admin';
-import { compressImageForAI, analyzeProductImage, ScannedProductData } from '@/services/openrouter';
+import { 
+  compressImageForAI, 
+  analyzeProductImage, 
+  ScannedProductData, 
+  getSelectedOpenRouterModel,
+  getModelDisplayName 
+} from '@/services/openrouter';
 
 interface AIPlaygroundSectionProps {
   storeSettings: StoreSettings;
@@ -27,11 +33,22 @@ export function AIPlaygroundSection({
   categories,
   onOpenModelSelector
 }: AIPlaygroundSectionProps) {
+  const [currentModel, setCurrentModel] = useState<string>(() => getSelectedOpenRouterModel());
   const [testImage, setTestImage] = useState<string | null>(null);
   const [analyzing, setAnalyzing] = useState(false);
   const [scanResult, setScanResult] = useState<ScannedProductData | null>(null);
   const [rawJsonResponse, setRawJsonResponse] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  // Ouve mudanças globais de modelo em tempo real
+  React.useEffect(() => {
+    const handleModelChange = (e: any) => {
+      const newModel = e.detail || getSelectedOpenRouterModel();
+      setCurrentModel(newModel);
+    };
+    window.addEventListener('lc_ai_model_changed', handleModelChange);
+    return () => window.removeEventListener('lc_ai_model_changed', handleModelChange);
+  }, []);
 
   // Upload foto de teste
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -117,14 +134,14 @@ export function AIPlaygroundSection({
 
         <div className="p-5 rounded-3xl bg-[#FFFFFF] border border-[#E7E0D5] shadow-xs">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-bold text-[#7A7368] uppercase">Modelo Ativo</span>
+            <span className="text-xs font-bold text-[#7A7368] uppercase">IA Ativa no Momento</span>
             <Zap size={18} className="text-amber-500" />
           </div>
-          <h3 className="text-sm font-mono font-bold text-[#1E1D1B] truncate">
-            {storeSettings.aiConfig.defaultModel}
+          <h3 className="text-sm font-bold text-[#1E1D1B] truncate" title={currentModel}>
+            {getModelDisplayName(currentModel)}
           </h3>
-          <p className="text-[11px] text-[#7A7368] mt-1">
-            Tempo médio: 1.4s por imagem
+          <p className="text-[10px] font-mono text-[#7A7368] truncate mt-0.5">
+            {currentModel}
           </p>
         </div>
 

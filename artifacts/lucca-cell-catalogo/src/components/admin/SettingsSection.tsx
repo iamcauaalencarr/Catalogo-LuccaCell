@@ -17,6 +17,12 @@ import {
   AlertCircle
 } from 'lucide-react';
 import { StoreSettings } from '@/types/admin';
+import { 
+  setSelectedOpenRouterModel, 
+  getSelectedOpenRouterModel, 
+  getModelDisplayName,
+  KNOWN_AI_MODELS 
+} from '@/services/openrouter';
 
 interface SettingsSectionProps {
   settings: StoreSettings;
@@ -33,6 +39,9 @@ export function SettingsSection({
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
+    if (formData.aiConfig?.defaultModel) {
+      setSelectedOpenRouterModel(formData.aiConfig.defaultModel);
+    }
     onSaveSettings(formData);
     setSavedSuccess(true);
     setTimeout(() => setSavedSuccess(false), 3000);
@@ -409,16 +418,58 @@ export function SettingsSection({
               Configurações do Scanner de IA (Visão Computacional)
             </h3>
 
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-[#4A453E] mb-2">
+                Escolha a IA Ativa para a Loja
+              </label>
+              
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 mb-4">
+                {Object.entries(KNOWN_AI_MODELS).map(([modelId, info]) => {
+                  const isSelected = formData.aiConfig.defaultModel === modelId;
+                  return (
+                    <button
+                      key={modelId}
+                      type="button"
+                      onClick={() => setFormData({ ...formData, aiConfig: { ...formData.aiConfig, defaultModel: modelId } })}
+                      className={`p-3 rounded-2xl text-left border transition-all flex items-start justify-between gap-2 ${
+                        isSelected 
+                          ? 'border-[#D97757] bg-[#FAF0E8] shadow-2xs' 
+                          : 'border-[#E0D8CC] bg-[#FAF7F2] hover:border-[#D97757]/60'
+                      }`}
+                    >
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="text-xs font-bold text-[#1E1D1B] truncate">{info.name}</span>
+                          {info.isFree ? (
+                            <span className="rounded-full bg-emerald-100 text-emerald-800 text-[9px] font-extrabold px-1.5 py-0.2">Grátis</span>
+                          ) : (
+                            <span className="rounded-full bg-amber-100 text-amber-800 text-[9px] font-bold px-1.5 py-0.2">Pro</span>
+                          )}
+                        </div>
+                        <span className="text-[10px] font-mono text-[#7A7368] block truncate mt-0.5">{modelId}</span>
+                      </div>
+                      {isSelected && (
+                        <span className="h-5 w-5 rounded-full bg-[#D97757] text-white flex items-center justify-center shrink-0 mt-0.5">
+                          <Check size={12} />
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-bold uppercase tracking-wider text-[#4A453E] mb-1">
-                  Modelo Padrão de Visão
+                  ID do Modelo (Customizado ou Selecionado)
                 </label>
                 <input
                   type="text"
                   value={formData.aiConfig.defaultModel}
                   onChange={e => setFormData({ ...formData, aiConfig: { ...formData.aiConfig, defaultModel: e.target.value } })}
                   className="w-full h-11 px-4 rounded-xl bg-[#FAF7F2] border border-[#E0D8CC] text-xs font-mono text-[#1E1D1B]"
+                  placeholder="ex: nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free"
                 />
               </div>
 

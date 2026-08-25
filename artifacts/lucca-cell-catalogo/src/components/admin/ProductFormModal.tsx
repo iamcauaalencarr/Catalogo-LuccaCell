@@ -19,7 +19,7 @@ import {
   Sliders
 } from 'lucide-react';
 import { Product, DynamicCategory, ProductVariant, ProductStatus, ProductVisual } from '@/types/admin';
-import { compressImageForAI } from '@/services/openrouter';
+import { compressImageForAI, getModelDisplayName, getSelectedOpenRouterModel } from '@/services/openrouter';
 
 interface ProductFormModalProps {
   isOpen: boolean;
@@ -271,7 +271,7 @@ export function ProductFormModal({
                 className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#FAF0E8] border border-[#EBD5C8] text-xs font-bold text-[#B05330] hover:bg-[#F5E2D4]"
               >
                 <Sparkles size={14} />
-                <span>Usar IA Scanner</span>
+                <span>Escanear c/ IA ({getModelDisplayName(getSelectedOpenRouterModel()).split(' ')[0]})</span>
               </button>
             )}
             <button

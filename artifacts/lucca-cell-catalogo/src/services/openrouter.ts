@@ -279,6 +279,57 @@ const OPENROUTER_API_KEY = import.meta.env.VITE_OPENROUTER_API_KEY || '';
 
 const ANTHROPIC_API_KEY = import.meta.env.VITE_ANTHROPIC_API_KEY || '';
 
+export const KNOWN_AI_MODELS: Record<string, { name: string; provider: string; isFree: boolean }> = {
+  'nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free': {
+    name: 'NVIDIA Nemotron 3 Nano Omni',
+    provider: 'NVIDIA',
+    isFree: true,
+  },
+  'openrouter/free': {
+    name: 'OpenRouter Auto (Multimodal)',
+    provider: 'OpenRouter',
+    isFree: true,
+  },
+  'nvidia/nemotron-3.5-lightning:free': {
+    name: 'NVIDIA Nemotron 3.5 Lightning',
+    provider: 'NVIDIA',
+    isFree: true,
+  },
+  'anthropic/claude-3-5-haiku': {
+    name: 'Anthropic Claude 3.5 Haiku',
+    provider: 'Anthropic',
+    isFree: false,
+  },
+  'google/gemini-2.5-flash': {
+    name: 'Google Gemini 2.5 Flash',
+    provider: 'Google',
+    isFree: false,
+  },
+  'openai/gpt-4o-mini': {
+    name: 'OpenAI GPT-4o Mini',
+    provider: 'OpenAI',
+    isFree: false,
+  },
+};
+
+export function getModelDisplayName(modelId: string): string {
+  if (!modelId) return 'NVIDIA Nemotron 3 Nano (Grátis)';
+  const cleanId = modelId.trim();
+  if (KNOWN_AI_MODELS[cleanId]) {
+    const info = KNOWN_AI_MODELS[cleanId];
+    return `${info.name} ${info.isFree ? '(Grátis)' : ''}`.trim();
+  }
+  if (cleanId.toLowerCase().includes('claude')) return 'Anthropic Claude 3.5 Haiku';
+  if (cleanId.toLowerCase().includes('nemotron')) return 'NVIDIA Nemotron Vision (Grátis)';
+  if (cleanId.toLowerCase().includes('gemini')) return 'Google Gemini Flash Vision';
+  if (cleanId.toLowerCase().includes('gpt-4o')) return 'OpenAI GPT-4o';
+  
+  // Extrai nome limpo se for no formato 'provider/model-name:free'
+  const parts = cleanId.split('/');
+  const namePart = parts[parts.length - 1].replace(/:free/gi, '');
+  return namePart.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+}
+
 export function getSelectedOpenRouterModel(): string {
   const localModel = typeof window !== 'undefined' ? localStorage.getItem('OPENROUTER_SELECTED_MODEL') : '';
   if (localModel?.trim()) return localModel.trim();
@@ -298,21 +349,21 @@ export function getSelectedOpenRouterModel(): string {
 
 export function setSelectedOpenRouterModel(modelId: string) {
   if (typeof window !== 'undefined') {
-    if (modelId.trim()) {
-      localStorage.setItem('OPENROUTER_SELECTED_MODEL', modelId.trim());
-      try {
-        const rawSettings = localStorage.getItem('lucca_cell_admin_settings');
-        if (rawSettings) {
-          const parsed = JSON.parse(rawSettings);
-          if (parsed.aiConfig) {
-            parsed.aiConfig.defaultModel = modelId.trim();
-            localStorage.setItem('lucca_cell_admin_settings', JSON.stringify(parsed));
-          }
+    const cleanId = modelId.trim() || 'nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free';
+    localStorage.setItem('OPENROUTER_SELECTED_MODEL', cleanId);
+    try {
+      const rawSettings = localStorage.getItem('lucca_cell_admin_settings');
+      if (rawSettings) {
+        const parsed = JSON.parse(rawSettings);
+        if (parsed.aiConfig) {
+          parsed.aiConfig.defaultModel = cleanId;
+          localStorage.setItem('lucca_cell_admin_settings', JSON.stringify(parsed));
         }
-      } catch {}
-    } else {
-      localStorage.removeItem('OPENROUTER_SELECTED_MODEL');
-    }
+      }
+    } catch {}
+    
+    // Dispara evento global para que qualquer componente atualize em tempo real
+    window.dispatchEvent(new CustomEvent('lc_ai_model_changed', { detail: cleanId }));
   }
 }
 
