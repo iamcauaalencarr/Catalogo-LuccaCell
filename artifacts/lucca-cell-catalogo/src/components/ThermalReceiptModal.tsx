@@ -1,6 +1,7 @@
 import React, { useRef } from 'react';
 import { Printer, X, Check, MessageCircle, ArrowRight, Share2, Copy } from 'lucide-react';
 import { Order, OrderItem } from '@/types/admin';
+import logoPath from '@assets/LOGO_1_1786564407567.png';
 
 export interface ReceiptData {
   orderNumber: string;
@@ -79,44 +80,38 @@ export function ThermalReceiptModal({
                 padding: 0;
               }
               body {
-                font-family: 'Consolas', 'Lucida Console', 'Segoe UI Mono', 'Courier New', monospace;
+                font-family: 'Courier New', Courier, monospace;
                 width: 72mm;
                 max-width: 80mm;
                 margin: 0 auto;
-                padding: 3mm 2mm 8mm 2mm;
-                font-size: 12.5px;
-                font-weight: 600;
-                line-height: 1.35;
-                letter-spacing: 0.2px;
+                padding: 4mm 2mm 8mm 2mm;
+                font-size: 11px;
+                line-height: 1.25;
                 color: #000000 !important;
                 background: #ffffff !important;
                 -webkit-print-color-adjust: exact;
                 print-color-adjust: exact;
               }
               .text-center { text-align: center; }
-              .text-right { text-align: right; }
-              .font-bold { font-weight: 800 !important; }
-              .font-black { font-weight: 900 !important; }
+              .font-bold { font-weight: bold; }
+              .font-black { font-weight: 900; }
               .uppercase { text-transform: uppercase; }
-              .border-b, .border-b-dashed { border-bottom: 1.5px dashed #000 !important; }
-              .border-t, .border-t-dashed { border-top: 1.5px dashed #000 !important; }
-              .border-dotted { border-bottom: 1px dotted #000 !important; }
-              .flex, .flex-between { display: flex; justify-content: space-between; }
+              .border-b-dashed { border-bottom: 1px dashed #000; }
+              .border-b-dotted { border-bottom: 1px dotted #555; }
+              .border-t-dotted { border-top: 1px dotted #555; }
+              .flex-between { display: flex; justify-content: space-between; }
               .flex-col { display: flex; flex-direction: column; }
-              .py-1 { padding-top: 3px; padding-bottom: 3px; }
-              .py-2 { padding-top: 5px; padding-bottom: 5px; }
-              .pt-1 { padding-top: 3px; }
-              .pb-1 { padding-bottom: 3px; }
-              .pb-2 { padding-bottom: 5px; }
-              .mt-1 { margin-top: 3px; }
-              .space-y-0\\.5 > * + * { margin-top: 2px; }
-              .space-y-1 > * + * { margin-top: 4px; }
-              .space-y-1\\.5 > * + * { margin-top: 5px; }
-              .text-lg { font-size: 16px; font-weight: 900; }
-              .text-sm { font-size: 13px; }
-              .text-xs { font-size: 11px; }
-              .text-xxs { font-size: 9.5px; }
-              .color-detail { padding-left: 10px; font-size: 11px; font-weight: bold; color: #000; }
+              .py-1 { padding-top: 4px; padding-bottom: 4px; }
+              .py-2 { padding-top: 6px; padding-bottom: 6px; }
+              .pt-1 { padding-top: 4px; }
+              .pb-1 { padding-bottom: 4px; }
+              .pb-2 { padding-bottom: 6px; }
+              .mt-1 { margin-top: 4px; }
+              .text-lg { font-size: 14px; }
+              .text-sm { font-size: 11px; }
+              .text-xs { font-size: 9.5px; }
+              .text-xxs { font-size: 8px; }
+              .color-detail { padding-left: 12px; font-size: 9px; color: #333; }
             </style>
           </head>
           <body>
@@ -176,19 +171,31 @@ export function ThermalReceiptModal({
             <div 
               id="thermal-receipt-print"
               ref={receiptRef}
-              className="w-full max-w-[320px] bg-white p-4 shadow-md font-mono text-[12px] leading-tight text-black border border-stone-300 select-all"
+              className="w-full max-w-[320px] bg-white p-4 shadow-md font-mono text-[11px] leading-tight text-black border border-stone-300 select-all"
               style={{
-                fontFamily: "'Consolas', 'Lucida Console', 'Segoe UI Mono', monospace",
+                fontFamily: "'Courier New', Courier, monospace",
                 color: '#000000',
-                backgroundColor: '#ffffff',
-                fontWeight: 600
+                backgroundColor: '#ffffff'
               }}
             >
-              {/* Header do Cupom */}
+              {/* Header do Cupom com Logo */}
               <div className="text-center pb-2 border-b border-dashed border-black">
+                <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '6px' }}>
+                  <img 
+                    src={logoPath} 
+                    alt="Lucca Cell Logo" 
+                    style={{ 
+                      maxHeight: '44px', 
+                      width: 'auto', 
+                      display: 'block', 
+                      margin: '0 auto',
+                      filter: 'grayscale(100%) contrast(160%)'
+                    }} 
+                  />
+                </div>
                 <div className="text-[14px] font-black tracking-wider uppercase">LUCCA CELL</div>
-                <div className="text-[10px]">Acessorios & Assistencia Tecnica</div>
-                <div className="text-[10px]">Guajara - AM</div>
+                <div className="text-[10px]">Acessórios & Assistência Técnica</div>
+                <div className="text-[10px]">Guajará - AM</div>
                 <div className="text-[10px] font-bold mt-0.5">WhatsApp: (97) 99155-4563</div>
               </div>
 
