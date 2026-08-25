@@ -53,7 +53,7 @@ O **Catálogo Lucca Cell** é uma solução completa desenvolvida sob medida par
 - **Contador Dinâmico de Categorias:** Filtros laterais com badge de contagem sincronizada em tempo real.
 
 ### 🔒 5. Painel Administrativo & Gestão de Loja
-- **Acesso Seguro por Rota com Hash:** Rota administrativa camuflada (`/#natal`) com autenticação via Supabase Auth.
+- **Acesso Seguro e Protegido:** Painel administrativo com autenticação estrita via Supabase Auth e controle de sessão.
 - **Controle de Acesso RBAC:** Níveis de permissão distintos para Master, Gerentes e Operadores.
 - **Gerenciador Completo:** Gestão de produtos, controle de estoque, motor de cupons de desconto, relatórios e auditoria de segurança.
 
@@ -118,9 +118,7 @@ npm install
 npm run dev
 ```
 
-O aplicativo estará acessível em:
-- **Catálogo Público:** `http://localhost:3000`
-- **Painel Administrativo:** `http://localhost:3000/#natal`
+O aplicativo estará acessível em: `http://localhost:3000`
 
 ---
 
