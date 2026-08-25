@@ -1,4 +1,4 @@
-import { type LucideIcon, ArrowRight, BatteryCharging, Cable, Check, ChevronDown, CircleCheck, Clock3, Headphones, Heart, Laptop, MapPin, Menu, MessageCircle, Minus, PackageCheck, Plus, RotateCcw, Search, ShieldCheck, ShoppingBag, SlidersHorizontal, Smartphone, Sparkles, Star, Tablet, Trash2, Truck, Wrench, X, Zap, Lock, Watch, Tag, Printer } from 'lucide-react';
+import { type LucideIcon, ArrowRight, BatteryCharging, Cable, Check, ChevronDown, CircleCheck, Clock3, Headphones, Heart, Laptop, MapPin, Menu, MessageCircle, Minus, PackageCheck, Plus, RotateCcw, Search, ShieldCheck, ShoppingBag, SlidersHorizontal, Smartphone, Sparkles, Star, Tablet, Trash2, Truck, Wrench, X, Zap, Lock, Watch, Tag, Printer, QrCode } from 'lucide-react';
 import { useMemo, useState, useEffect } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ErrorBoundary } from '@/components/error-boundary';
@@ -11,6 +11,8 @@ import { ProductColorModal } from '@/components/ProductColorModal';
 import { AdminPanel, type Product, type Category } from '@/components/AdminPanel';
 import { ProductRequestModal } from '@/components/ProductRequestModal';
 import { ThermalReceiptModal, type ReceiptData } from '@/components/ThermalReceiptModal';
+import { PixPaymentModal } from '@/components/PixPaymentModal';
+import { type StoreSettings } from '@/types/admin';
 import { signOutAdminFromSupabase, getSupabaseUser, AdminProfile, logSecurityAction, supabase } from '@/lib/supabase';
 import { CATEGORIAS_VALIDAS } from '@/services/openrouter';
 import { AdminStore } from '@/services/adminStore';
@@ -375,7 +377,8 @@ function CartDrawer({
   onClose, 
   onQuantity, 
   onRemove,
-  onOpenReceipt 
+  onOpenReceipt,
+  onOpenPix 
 }: { 
   open: boolean; 
   lines: CartLine[]; 
@@ -383,6 +386,7 @@ function CartDrawer({
   onQuantity: (index: number, delta: number) => void; 
   onRemove: (index: number) => void;
   onOpenReceipt: (data: ReceiptData) => void;
+  onOpenPix: () => void;
 }) {
   const totals = calculateCartTotals(lines);
 
@@ -470,9 +474,18 @@ function CartDrawer({
             <div className="space-y-2.5">
               <button 
                 type="button" 
+                onClick={onOpenPix} 
+                data-testid="button-pay-pix" 
+                className="flex w-full items-center justify-center gap-2 rounded-full bg-[#059669] py-3.5 text-xs font-extrabold text-[#FFFFFF] transition-colors hover:bg-[#047857] active:scale-95 shadow-md"
+              >
+                <QrCode size={16} /> Pagar com Pix Automático (Copiar Código)
+              </button>
+
+              <button 
+                type="button" 
                 onClick={handleFinishWhatsAppOrder} 
                 data-testid="button-finish-order" 
-                className="flex w-full items-center justify-center gap-2 rounded-full bg-[#D97757] py-3.5 text-xs font-extrabold text-[#FFFFFF] transition-colors hover:bg-[#C85A32] active:scale-95 shadow-sm"
+                className="flex w-full items-center justify-center gap-2 rounded-full bg-[#D97757] py-3 text-xs font-bold text-[#FFFFFF] transition-colors hover:bg-[#C85A32] active:scale-95 shadow-xs"
               >
                 Pedir pelo WhatsApp <ArrowRight size={15} />
               </button>
@@ -603,6 +616,8 @@ export function App() {
   const [sort, setSort] = useState('Destaques');
   const [mobileFilters, setMobileFilters] = useState(false);
   const [activeReceiptData, setActiveReceiptData] = useState<ReceiptData | null>(null);
+  const [isPixModalOpen, setIsPixModalOpen] = useState(false);
+  const [storeSettings, setStoreSettings] = useState<StoreSettings>(() => AdminStore.getSettings());
 
   // Solicitação de produtos para clientes
   const [isProductRequestModalOpen, setIsProductRequestModalOpen] = useState(false);
@@ -1268,6 +1283,19 @@ export function App() {
         onQuantity={changeQuantity} 
         onRemove={removeLine}
         onOpenReceipt={setActiveReceiptData}
+        onOpenPix={() => setIsPixModalOpen(true)}
+      />
+
+      {/* Modal de Pagamento Pix com Valor Automático (BR Code EMV) */}
+      <PixPaymentModal
+        isOpen={isPixModalOpen}
+        onClose={() => setIsPixModalOpen(false)}
+        cartLines={lines}
+        storeSettings={storeSettings}
+        onOrderCompleted={() => {
+          setLines([]);
+          showToast('Pedido e pagamento Pix confirmados com sucesso! ✨');
+        }}
       />
 
       {/* Modal de Notinha Térmica Epson TM-T20X */}
