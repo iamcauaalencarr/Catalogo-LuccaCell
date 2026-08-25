@@ -39,12 +39,98 @@ export function ThermalReceiptModal({
 
   if (!isOpen || !receiptData) return null;
 
-  const handlePrint = () => {
-    window.print();
-  };
-
   const formatBRL = (val: number) =>
     val.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
+  const handlePrint = () => {
+    const receiptEl = receiptRef.current;
+    if (!receiptEl) {
+      window.print();
+      return;
+    }
+
+    // Cria iframe isolado invisível para não herdar CSS do modal/backdrop
+    const iframe = document.createElement('iframe');
+    iframe.style.position = 'fixed';
+    iframe.style.right = '0';
+    iframe.style.bottom = '0';
+    iframe.style.width = '0';
+    iframe.style.height = '0';
+    iframe.style.border = '0';
+    document.body.appendChild(iframe);
+
+    const doc = iframe.contentWindow?.document;
+    if (doc) {
+      doc.open();
+      doc.write(`
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <meta charset="utf-8">
+            <title>Comprovante Lucca Cell - ${receiptData.orderNumber}</title>
+            <style>
+              @page {
+                size: 80mm auto;
+                margin: 0;
+              }
+              * {
+                box-sizing: border-box;
+                margin: 0;
+                padding: 0;
+              }
+              body {
+                font-family: 'Courier New', Courier, monospace;
+                width: 72mm;
+                max-width: 80mm;
+                margin: 0 auto;
+                padding: 4mm 2mm 8mm 2mm;
+                font-size: 11px;
+                line-height: 1.25;
+                color: #000000 !important;
+                background: #ffffff !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+              }
+              .text-center { text-align: center; }
+              .font-bold { font-weight: bold; }
+              .font-black { font-weight: 900; }
+              .uppercase { text-transform: uppercase; }
+              .border-b-dashed { border-bottom: 1px dashed #000; }
+              .border-b-dotted { border-bottom: 1px dotted #555; }
+              .border-t-dotted { border-top: 1px dotted #555; }
+              .flex-between { display: flex; justify-content: space-between; }
+              .flex-col { display: flex; flex-direction: column; }
+              .py-1 { padding-top: 4px; padding-bottom: 4px; }
+              .py-2 { padding-top: 6px; padding-bottom: 6px; }
+              .pt-1 { padding-top: 4px; }
+              .pb-1 { padding-bottom: 4px; }
+              .pb-2 { padding-bottom: 6px; }
+              .mt-1 { margin-top: 4px; }
+              .text-lg { font-size: 14px; }
+              .text-sm { font-size: 11px; }
+              .text-xs { font-size: 9.5px; }
+              .text-xxs { font-size: 8px; }
+              .color-detail { padding-left: 12px; font-size: 9px; color: #333; }
+            </style>
+          </head>
+          <body>
+            ${receiptEl.innerHTML}
+          </body>
+        </html>
+      `);
+      doc.close();
+
+      setTimeout(() => {
+        iframe.contentWindow?.focus();
+        iframe.contentWindow?.print();
+        setTimeout(() => {
+          if (document.body.contains(iframe)) {
+            document.body.removeChild(iframe);
+          }
+        }, 1500);
+      }, 300);
+    }
+  };
 
   return (
     <>
@@ -228,45 +314,6 @@ export function ThermalReceiptModal({
           </div>
         </div>
       </div>
-
-      {/* ─────────────────────────────────────────────────────────────
-          2. PRINT STYLES FOR EPSON TM-T20X THERMAL PRINTER (80mm)
-      ───────────────────────────────────────────────────────────── */}
-      <style>{`
-        @media print {
-          /* Esconde todo o conteúdo da página */
-          body * {
-            visibility: hidden !important;
-          }
-          
-          /* Exibe unicamente o comprovante térmico */
-          #thermal-receipt-print, #thermal-receipt-print * {
-            visibility: visible !important;
-          }
-          
-          #thermal-receipt-print {
-            position: absolute !important;
-            left: 0 !important;
-            top: 0 !important;
-            width: 76mm !important;
-            max-width: 80mm !important;
-            margin: 0 !important;
-            padding: 2mm 1mm !important;
-            font-family: 'Courier New', Courier, monospace !important;
-            font-size: 10pt !important;
-            line-height: 1.2 !important;
-            color: #000000 !important;
-            background: #ffffff !important;
-            box-shadow: none !important;
-            border: none !important;
-          }
-
-          @page {
-            size: 80mm auto;
-            margin: 0mm;
-          }
-        }
-      `}</style>
     </>
   );
 }
