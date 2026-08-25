@@ -1,8 +1,10 @@
 import { createClient } from '@supabase/supabase-js';
 import { Product } from '@/components/AdminPanel';
 
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || '';
-const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
+const SUPABASE_URL = 
+  import.meta.env.VITE_SUPABASE_URL || 'https://ynnxouscvrrkcwyqirdk.supabase.co';
+const SUPABASE_KEY = 
+  import.meta.env.VITE_SUPABASE_ANON_KEY || 'sb_publishable_opiI8tsYSm4fPNeF4YTthw_kw7c2CTo';
 
 // Inicialização segura do cliente Supabase
 export const supabase = (SUPABASE_URL && SUPABASE_KEY)

@@ -139,11 +139,11 @@ export function ThermalReceiptModal({
       {/* ─────────────────────────────────────────────────────────────
           1. BACKDROP & MODAL ON SCREEN
       ───────────────────────────────────────────────────────────── */}
-      <div 
+      <div
         className="fixed inset-0 z-50 bg-black/70 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 print:hidden"
         onClick={onClose}
       >
-        <div 
+        <div
           className="relative w-full max-w-md bg-[#FAF8F5] rounded-3xl border border-[#E0D8CC] shadow-2xl overflow-hidden flex flex-col max-h-[92vh] animate-rise text-[#1E1D1B]"
           onClick={e => e.stopPropagation()}
         >
@@ -169,7 +169,7 @@ export function ThermalReceiptModal({
 
           {/* Thermal Receipt Visual Preview (80mm styling) */}
           <div className="p-4 sm:p-6 overflow-y-auto flex justify-center bg-[#ECE6DC]">
-            <div 
+            <div
               id="thermal-receipt-print"
               ref={receiptRef}
               className="w-full max-w-[320px] bg-white p-4 shadow-md font-mono text-[11px] leading-tight text-black border border-stone-300 select-all"
@@ -182,21 +182,21 @@ export function ThermalReceiptModal({
               {/* Header do Cupom com Logo em Preto Absoluto */}
               <div className="text-center pb-2 border-b border-dashed border-black">
                 <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '6px' }}>
-                  <img 
-                    src={logoPath} 
-                    alt="Lucca Cell Logo" 
+                  <img
+                    src={logoPath}
+                    alt="Lucca Cell Logo"
                     className="thermal-logo"
-                    style={{ 
-                      maxHeight: '44px', 
-                      width: 'auto', 
-                      display: 'block', 
+                    style={{
+                      maxHeight: '44px',
+                      width: 'auto',
+                      display: 'block',
                       margin: '0 auto',
                       filter: 'brightness(0)',
                       WebkitFilter: 'brightness(0)'
-                    }} 
+                    }}
                   />
                 </div>
-                <div className="text-[14px] font-black tracking-wider uppercase">LUCCA CELL</div>
+                <div className="text-[14px] font-black tracking-wider uppercase"></div>
                 <div className="text-[10px]">Acessórios & Assistência Técnica</div>
                 <div className="text-[10px]">Guajará - AM</div>
                 <div className="text-[10px] font-bold mt-0.5">WhatsApp: (97) 99155-4563</div>
