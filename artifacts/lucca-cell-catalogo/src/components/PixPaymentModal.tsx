@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { QrCode, Copy, Check, X, ShieldCheck, ArrowRight, MessageCircle, Sparkles } from 'lucide-react';
 import { generatePixPayload, generatePixQrCodeUrl } from '@/lib/functional/pix';
 import { StoreSettings } from '@/types/admin';
+import { AdminStore } from '@/services/adminStore';
 import { formatCurrency, CartLine, calculateCartTotals } from '@/lib/functional/cart';
 
 interface PixPaymentModalProps {
@@ -29,10 +30,19 @@ export function PixPaymentModal({
     [orderNumber]
   );
 
-  const pixConfig = storeSettings.pixConfig || {
+  // Lê sempre as configurações ativas mais recentes (incluindo CPF recém-salvo)
+  const currentSettings = useMemo(() => {
+    try {
+      return AdminStore.getSettings();
+    } catch {
+      return storeSettings;
+    }
+  }, [isOpen, storeSettings]);
+
+  const pixConfig = currentSettings.pixConfig || {
     keyValue: '97991554563',
-    keyType: 'phone',
-    receiverName: 'Lucca Cell Comércio',
+    keyType: 'cpf',
+    receiverName: 'Lucca Cell',
     city: 'Guajará',
   };
 
@@ -40,14 +50,14 @@ export function PixPaymentModal({
   const pixPayload = useMemo(() => {
     return generatePixPayload({
       pixKey: pixConfig.keyValue || '97991554563',
-      pixKeyType: pixConfig.keyType || 'phone',
-      merchantName: pixConfig.receiverName || storeSettings.storeName || 'LUCCA CELL',
-      merchantCity: pixConfig.city || storeSettings.address?.city || 'GUAJARA',
+      pixKeyType: pixConfig.keyType || 'cpf',
+      merchantName: pixConfig.receiverName || currentSettings.storeName || 'LUCCA CELL',
+      merchantCity: pixConfig.city || currentSettings.address?.city || 'GUAJARA',
       amount: totals.total > 0 ? totals.total : undefined,
       txid: activeOrderNumber.replace(/[^a-zA-Z0-9]/g, ''),
       description: `Pedido ${activeOrderNumber}`,
     });
-  }, [pixConfig, storeSettings, totals.total, activeOrderNumber]);
+  }, [pixConfig, currentSettings, totals.total, activeOrderNumber]);
 
   const qrCodeUrl = useMemo(() => {
     return generatePixQrCodeUrl(pixPayload, 260);
