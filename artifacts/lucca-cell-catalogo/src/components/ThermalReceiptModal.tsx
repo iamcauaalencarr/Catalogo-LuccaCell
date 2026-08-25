@@ -111,7 +111,8 @@ export function ThermalReceiptModal({
               .text-sm { font-size: 11px; }
               .text-xs { font-size: 9.5px; }
               .text-xxs { font-size: 8px; }
-              .color-detail { padding-left: 12px; font-size: 9px; color: #333; }
+              .color-detail { padding-left: 12px; font-size: 9px; color: #000; }
+              .thermal-logo { filter: brightness(0) !important; -webkit-filter: brightness(0) !important; }
             </style>
           </head>
           <body>
@@ -178,18 +179,20 @@ export function ThermalReceiptModal({
                 backgroundColor: '#ffffff'
               }}
             >
-              {/* Header do Cupom com Logo */}
+              {/* Header do Cupom com Logo em Preto Absoluto */}
               <div className="text-center pb-2 border-b border-dashed border-black">
                 <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '6px' }}>
                   <img 
                     src={logoPath} 
                     alt="Lucca Cell Logo" 
+                    className="thermal-logo"
                     style={{ 
                       maxHeight: '44px', 
                       width: 'auto', 
                       display: 'block', 
                       margin: '0 auto',
-                      filter: 'grayscale(100%) contrast(160%)'
+                      filter: 'brightness(0)',
+                      WebkitFilter: 'brightness(0)'
                     }} 
                   />
                 </div>
